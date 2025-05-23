@@ -64,6 +64,10 @@ export function QueueSummary({
   );
   const canDownloadAll = safeTasks.length > 0;
 
+  // Show processing animation only when there are tasks actually being processed
+  const showProcessingAnimation =
+    isProcessing && (pendingCount > 0 || processingCount > 0);
+
   return (
     <motion.div
       className="border rounded-lg p-4 bg-card mb-6"
@@ -112,7 +116,11 @@ export function QueueSummary({
 
         <div className="bg-secondary/50 rounded-md p-3">
           <div className="flex items-center">
-            <Loader2 className="h-5 w-5 mr-2 text-primary animate-spin" />
+            <Loader2
+              className={`h-5 w-5 mr-2 text-primary ${
+                showProcessingAnimation ? "animate-spin" : ""
+              }`}
+            />
             <span className="text-sm">Processing</span>
           </div>
           <p className="text-2xl font-semibold mt-1">{processingCount}</p>
@@ -148,7 +156,7 @@ export function QueueSummary({
         <Progress value={progress.percentage} className="h-2" />
       </div>
 
-      {isProcessing && (
+      {showProcessingAnimation && (
         <div className="mt-2 text-sm text-muted-foreground">
           <p>
             Rate limited to 4 requests/minute. {processingCount} files currently
@@ -156,6 +164,15 @@ export function QueueSummary({
           </p>
         </div>
       )}
+
+      {progress.percentage === 100 &&
+        pendingCount === 0 &&
+        processingCount === 0 && (
+          <div className="mt-2 text-sm text-green-600 font-medium">
+            ✅ All files scanned successfully! {safeCount} safe files ready for
+            download.
+          </div>
+        )}
     </motion.div>
   );
 }
