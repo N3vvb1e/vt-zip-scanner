@@ -587,9 +587,6 @@ export function HistoryView({
                                       SHA256:{" "}
                                       {entry.report.meta.file_info.sha256}
                                     </p>
-                                    <p>
-                                      MD5: {entry.report.meta.file_info.md5}
-                                    </p>
                                   </div>
                                 </div>
                               )}

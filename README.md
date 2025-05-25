@@ -5,12 +5,14 @@ A React-based web application for secure file scanning using the VirusTotal API,
 ## Core Features
 
 - **Secure File Processing**
+
   - Safe ZIP file handling with path traversal protection
   - File hash calculation and verification
   - Dangerous file extension detection
   - Real-time malware scanning via VirusTotal
 
 - **Modern UI/UX**
+
   - Intuitive drag-and-drop interface
   - Real-time scan status monitoring
   - Progress tracking for multiple files
@@ -44,16 +46,19 @@ A React-based web application for secure file scanning using the VirusTotal API,
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Create a `.env` file with your VirusTotal API key:
+
 ```
-VITE_VIRUSTOTAL_API_KEY=your_api_key_here
+VITE_VT_API_KEY=your_api_key_here
 ```
 
 4. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -61,6 +66,7 @@ npm run dev
 ## Project Architecture
 
 ### Directory Structure
+
 ```
 src/
 ├── components/
@@ -86,12 +92,13 @@ src/
 
 ### Core Services
 
-- **virusTotalService**: 
+- **virusTotalService**:
+
   - File submission to VirusTotal
   - Report retrieval
   - API key validation
 
-- **persistenceService**: 
+- **persistenceService**:
   - Queue state management
   - Scan history persistence
   - Data recovery
@@ -99,6 +106,7 @@ src/
 ### Security Utils
 
 - **secureZipUtils**:
+
   - Path traversal protection
   - Dangerous extension detection
   - Safe ZIP creation and handling

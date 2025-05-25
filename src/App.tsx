@@ -63,9 +63,6 @@ function App() {
 
     // Only update hasFiles if we're initialized
     if (isInitialized) {
-      console.log(
-        `hasFiles state update: tasks.length=${tasks.length}, hasFiles=${hasTasksNow}, isInitialized=${isInitialized}`
-      );
       setHasFiles(hasTasksNow);
     }
   }, [tasks.length, isInitialized]);

@@ -1,94 +1,32 @@
-import axios from "axios";
-import type { AnalysisReport, SubmitFileResponse } from "../types/index";
+/**
+ * VirusTotal Service
+ * Backward-compatible service layer using the new client architecture
+ */
 
-// VirusTotal API URLs
-const VT_API_URL = "https://www.virustotal.com/api/v3";
-const SUBMIT_URL = `${VT_API_URL}/files`;
-const ANALYSIS_URL = `${VT_API_URL}/analyses`;
-
-// Get API key from environment variable
-const VT_API_KEY = import.meta.env.VITE_VT_API_KEY || "";
-
-// Validate API key exists
-if (!VT_API_KEY) {
-  console.warn("VirusTotal API key not found in environment variables");
-}
-
-// Create axios instance with default config
-const api = axios.create({
-  headers: {
-    "X-Apikey": VT_API_KEY, // Use capital X and capital A as per VirusTotal docs
-  },
-});
+import type { AnalysisReport } from "../types/index";
+import { getVirusTotalClient } from "./virusTotalFactory";
+import { configService } from "./configService";
 
 /**
  * Submit a file to VirusTotal for scanning
  * @param file The file blob to scan
  * @returns The analysis ID to use for retrieving the report
+ * @throws {Error} When submission fails
  */
 export async function submitFile(file: Blob): Promise<string> {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const response = await api.post<SubmitFileResponse>(SUBMIT_URL, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    return response.data.data.id;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-
-      // Rate limit - throw specific error so caller can handle it
-      if (status === 429) {
-        throw new Error("RATE_LIMIT");
-      }
-
-      // Other HTTP errors
-      if (status) {
-        throw new Error(`HTTP ${status}: Failed to submit file for analysis`);
-      }
-    }
-
-    console.error("Error submitting file to VirusTotal:", error);
-    throw new Error("Failed to submit file for analysis");
-  }
+  const client = getVirusTotalClient();
+  return client.submitFile(file);
 }
 
 /**
  * Get the report for a previously submitted file
  * @param analysisId The analysis ID returned from submitFile
  * @returns The full analysis report
+ * @throws {Error} When report retrieval fails
  */
 export async function getReport(analysisId: string): Promise<AnalysisReport> {
-  try {
-    const response = await api.get(`${ANALYSIS_URL}/${analysisId}`);
-
-    // Note: VirusTotal API doesn't provide file metadata in analysis responses
-    // We enhance reports with locally calculated hashes in usePersistedQueue.ts
-
-    return response.data.data.attributes as AnalysisReport;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-
-      // Rate limit - throw specific error so caller can handle it
-      if (status === 429) {
-        throw new Error("RATE_LIMIT");
-      }
-
-      // Other HTTP errors
-      if (status) {
-        throw new Error(`HTTP ${status}: Failed to retrieve analysis report`);
-      }
-    }
-
-    console.error("Error getting report from VirusTotal:", error);
-    throw new Error("Failed to retrieve analysis report");
-  }
+  const client = getVirusTotalClient();
+  return client.getReport(analysisId);
 }
 
 /**
@@ -96,36 +34,27 @@ export async function getReport(analysisId: string): Promise<AnalysisReport> {
  * @returns True if the API key is valid, false if invalid or missing
  */
 export async function validateApiKey(): Promise<boolean> {
-  if (!VT_API_KEY || VT_API_KEY.trim() === "") {
+  if (!configService.hasVirusTotalApiKey()) {
     console.log("No API key provided or API key is empty");
     return false;
   }
 
-  try {
-    await api.get(`${VT_API_URL}/users/current`);
+  const client = getVirusTotalClient();
+  return client.validateApiKey();
+}
 
-    return true;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
+/**
+ * Check if VirusTotal API key is configured
+ * @returns True if API key is configured
+ */
+export function hasApiKey(): boolean {
+  return configService.hasVirusTotalApiKey();
+}
 
-      // Rate limit (429) means the API key is valid, just overused
-      if (status === 429) {
-        return true;
-      }
-
-      // 401/403 means invalid API key or missing header
-      if (status === 401 || status === 403) {
-        return false;
-      }
-
-      // For other errors (network, server issues), assume key is valid
-      // so user can still try to use the app
-      console.log("Network/server error, assuming API key is valid");
-      return true;
-    }
-
-    console.log("Unknown error during API key validation");
-    return false;
-  }
+/**
+ * Get VirusTotal configuration
+ * @returns VirusTotal configuration object
+ */
+export function getConfig() {
+  return configService.getVirusTotalConfig();
 }
