@@ -7,12 +7,13 @@ import {
   AlertTriangle,
   CheckCircle,
   ShieldAlert,
+  ChevronDown,
 } from "lucide-react";
 import type { ScanTask } from "../../types";
 import { Progress } from "../ui/Progress";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
-import { formatFileSize } from "../../utils/zipUtils";
+import { formatFileSize } from "../../utils/common";
 
 interface TaskCardProps {
   task: ScanTask;
@@ -21,10 +22,24 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
+  // Safety check for task object
+  if (!task || !task.file) {
+    console.warn("TaskCard: Invalid task or missing file", task);
+    return null;
+  }
+
+  // Safety check for file blob (required for downloads)
+  if (task.status === "completed" && !task.file.blob) {
+    console.warn("TaskCard: Completed task missing file blob", task);
+    // Still render the card but disable download functionality
+  }
+
   const getStatusBadge = () => {
-    switch (task.status) {
+    switch (task?.status) {
       case "pending":
         return <Badge variant="secondary">Pending</Badge>;
+      case "hashing":
+        return <Badge variant="info">Hashing</Badge>;
       case "uploading":
         return <Badge variant="info">Uploading</Badge>;
       case "scanning":
@@ -38,6 +53,15 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
           );
         }
         return <Badge variant="success">Clean</Badge>;
+      case "reused":
+        if (task.report?.stats?.malicious && task.report.stats.malicious > 0) {
+          return (
+            <Badge variant="destructive">
+              Detected: {task.report.stats.malicious} (Cached)
+            </Badge>
+          );
+        }
+        return <Badge variant="success">Clean (Cached)</Badge>;
       case "error":
         return <Badge variant="destructive">Error</Badge>;
       default:
@@ -49,11 +73,18 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
     switch (task.status) {
       case "pending":
         return <Loader2 className="h-5 w-5 text-muted-foreground" />;
+      case "hashing":
+        return <Loader2 className="h-5 w-5 text-primary animate-spin" />;
       case "uploading":
         return <Loader2 className="h-5 w-5 text-primary animate-spin" />;
       case "scanning":
         return <Loader2 className="h-5 w-5 text-warning animate-spin" />;
       case "completed":
+        if (task.report?.stats?.malicious && task.report.stats.malicious > 0) {
+          return <ShieldAlert className="h-5 w-5 text-destructive" />;
+        }
+        return <CheckCircle className="h-5 w-5 text-success" />;
+      case "reused":
         if (task.report?.stats?.malicious && task.report.stats.malicious > 0) {
           return <ShieldAlert className="h-5 w-5 text-destructive" />;
         }
@@ -65,9 +96,11 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
     }
   };
 
-  const isCompleted = task.status === "completed";
+  const isCompleted = task.status === "completed" || task.status === "reused";
   const isSafe = isCompleted && task.report?.stats.malicious === 0;
   const isError = task.status === "error";
+  const hasBlob = Boolean(task.file.blob);
+  const canDownload = isSafe && hasBlob;
 
   return (
     <motion.div
@@ -83,12 +116,15 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium truncate pr-2">{task.file.name}</h3>
+              <h3 className="font-medium truncate pr-2">
+                {task.file?.name || "Unknown file"}
+              </h3>
               {getStatusBadge()}
             </div>
 
             <p className="text-sm text-muted-foreground mt-1">
-              {formatFileSize(task.file.size)} • {task.file.type}
+              {formatFileSize(task.file?.size || 0)} •{" "}
+              {task.file?.type || "Unknown type"}
             </p>
 
             {isError && task.error && (
@@ -112,13 +148,27 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
                     {task.report.stats.harmless} harmless
                   </span>
                 </div>
+
+                {task.analysisId && (
+                  <div className="mt-2">
+                    <a
+                      href={`https://www.virustotal.com/gui/file-analysis/${task.analysisId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline flex items-center text-sm"
+                    >
+                      View on VirusTotal
+                      <ChevronDown className="h-3 w-3 ml-1 -rotate-90" />
+                    </a>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
         <div className="flex space-x-2">
-          {isSafe && (
+          {canDownload && (
             <Button
               variant="outline"
               size="sm"
@@ -126,6 +176,17 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
               title="Download file"
             >
               <Download className="h-4 w-4" />
+            </Button>
+          )}
+
+          {isSafe && !hasBlob && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              title="File data not available"
+            >
+              <Download className="h-4 w-4 opacity-50" />
             </Button>
           )}
 
@@ -140,7 +201,9 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
         </div>
       </div>
 
-      {(task.status === "uploading" || task.status === "scanning") && (
+      {(task.status === "hashing" ||
+        task.status === "uploading" ||
+        task.status === "scanning") && (
         <div className="mt-4">
           <Progress value={task.progress} className="h-2" />
         </div>

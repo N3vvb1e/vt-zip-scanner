@@ -1,30 +1,74 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Zap, Info } from "lucide-react";
+import { Shield, Zap, Info, Settings } from "lucide-react";
 
 import { FileDropzone } from "./components/scanner/FileDropzone";
 import { TaskCard } from "./components/scanner/TaskCard";
 import { QueueSummary } from "./components/scanner/QueueSummary";
 import { Button } from "./components/ui/Button";
-import { useQueue } from "./hooks/useQueue";
+import { usePersistedQueue } from "./hooks/usePersistedQueue";
+import { HistoryView } from "./components/scanner/HistoryView";
+import { ErrorBoundary, QueueErrorBoundary } from "./components/ErrorBoundary";
 import type { FileEntry, ScanTask } from "./types";
-import { createSafeZip } from "./utils/zipUtils";
+import { createSafeZip } from "./utils/secureZipUtils";
 import { validateApiKey } from "./services/virusTotalService";
 
 function App() {
   const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
   const [hasFiles, setHasFiles] = useState(false);
+  const [activeView, setActiveView] = useState<"queue" | "history">("queue");
+  const [showSettings, setShowSettings] = useState(false);
 
   const {
     tasks,
-    addTasks,
+    replaceTasks,
     removeTask,
     clearQueue,
     isProcessing,
     startProcessing,
     stopProcessing,
     progress,
-  } = useQueue();
+    isInitialized,
+    autoStartEnabled,
+    updateSettings,
+    historyEntries,
+    historyTotal,
+    historyLoading,
+    loadHistory,
+    clearHistory,
+    getHistoryFile,
+    getStorageStats,
+  } = usePersistedQueue();
+
+  // Load storage stats for history view
+  const [storageStats, setStorageStats] = useState<
+    | {
+        historyCount: number;
+        filesCount: number;
+        estimatedSize?: number;
+        actualFileSize?: number;
+      }
+    | undefined
+  >();
+
+  useEffect(() => {
+    if (activeView === "history") {
+      getStorageStats().then(setStorageStats).catch(console.error);
+    }
+  }, [activeView, historyEntries, getStorageStats]);
+
+  // Update hasFiles state when tasks change (handles page refresh)
+  useEffect(() => {
+    const hasTasksNow = tasks.length > 0;
+
+    // Only update hasFiles if we're initialized
+    if (isInitialized) {
+      console.log(
+        `hasFiles state update: tasks.length=${tasks.length}, hasFiles=${hasTasksNow}, isInitialized=${isInitialized}`
+      );
+      setHasFiles(hasTasksNow);
+    }
+  }, [tasks.length, isInitialized]);
 
   // Check if API key is valid on mount
   useEffect(() => {
@@ -44,11 +88,14 @@ function App() {
   // Handle file extraction from zip
   const handleFilesExtracted = useCallback(
     (files: FileEntry[]) => {
-      addTasks(files);
+      // Replace existing queue with new files
+      replaceTasks(files);
       setHasFiles(true);
-      startProcessing(); // Auto-start scanning
+      if (autoStartEnabled) {
+        startProcessing();
+      }
     },
-    [addTasks, startProcessing]
+    [replaceTasks, startProcessing, autoStartEnabled]
   );
 
   // Download a single file
@@ -67,11 +114,11 @@ function App() {
 
   // Download all safe files
   const handleDownloadAll = useCallback(async () => {
-    // Get safe files (completed with no malicious detections)
+    // Get safe files (completed or reused with no malicious detections)
     const safeFiles = tasks
       .filter(
         (task) =>
-          task.status === "completed" &&
+          (task.status === "completed" || task.status === "reused") &&
           task.report?.stats.malicious === 0 &&
           task.file.blob
       )
@@ -104,8 +151,34 @@ function App() {
     setHasFiles(false);
   }, [clearQueue]);
 
-  // If API key check hasn't completed yet
-  if (apiKeyValid === null) {
+  // Add history download handler
+  const handleHistoryDownload = useCallback(
+    async (fileId: string, fileName: string) => {
+      const blob = await getHistoryFile(fileId);
+      if (!blob) {
+        alert("File not found in history");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    },
+    [getHistoryFile]
+  );
+
+  // Toggle auto-start setting
+  const handleToggleAutoStart = useCallback(async () => {
+    await updateSettings({ autoStartScanning: !autoStartEnabled });
+  }, [autoStartEnabled, updateSettings]);
+
+  // If API key check hasn't completed yet or not initialized
+  if (apiKeyValid === null || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center p-8">
@@ -159,23 +232,73 @@ function App() {
             <h1 className="text-xl font-bold">VirusTotal ZIP Scanner</h1>
           </div>
 
-          {hasFiles && (
-            <Button variant="ghost" onClick={handleReset}>
-              Upload New ZIP
+          <div className="flex items-center gap-4">
+            {/* Navigation tabs */}
+            <div className="flex gap-2">
+              <Button
+                variant={activeView === "queue" ? "default" : "ghost"}
+                onClick={() => setActiveView("queue")}
+              >
+                Queue
+              </Button>
+              <Button
+                variant={activeView === "history" ? "default" : "ghost"}
+                onClick={() => setActiveView("history")}
+              >
+                History
+              </Button>
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowSettings(!showSettings)}
+            >
+              <Settings className="h-4 w-4" />
             </Button>
-          )}
+
+            {hasFiles && activeView === "queue" && (
+              <Button variant="ghost" onClick={handleReset}>
+                Upload New ZIP
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
+      {/* Settings Panel */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b bg-muted/30 overflow-hidden"
+          >
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Settings</h3>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={autoStartEnabled}
+                      onChange={handleToggleAutoStart}
+                      className="rounded"
+                    />
+                    Auto-start scanning when files are uploaded
+                  </label>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="container mx-auto px-4 py-8">
-        <AnimatePresence mode="wait">
-          {!hasFiles ? (
-            <motion.div
-              key="upload"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+        {activeView === "queue" ? (
+          !hasFiles ? (
+            <div key="upload">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold mb-2">Scan a ZIP file</h2>
                 <p className="text-muted-foreground mb-4">
@@ -198,50 +321,62 @@ function App() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              key="results"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <QueueSummary
-                tasks={tasks}
-                progress={progress}
-                isProcessing={isProcessing}
-                onStartProcessing={startProcessing}
-                onStopProcessing={stopProcessing}
-                onClearQueue={clearQueue}
-                onDownloadAll={handleDownloadAll}
-              />
+            <div key="results">
+              <QueueErrorBoundary>
+                <QueueSummary
+                  tasks={tasks}
+                  progress={progress}
+                  isProcessing={isProcessing}
+                  onStartProcessing={startProcessing}
+                  onStopProcessing={stopProcessing}
+                  onClearQueue={clearQueue}
+                  onDownloadAll={handleDownloadAll}
+                />
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-medium">
-                    Files ({tasks.length})
-                  </h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-medium">
+                      Files ({Array.isArray(tasks) ? tasks.length : 0})
+                    </h2>
 
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Zap className="h-4 w-4 mr-1 text-yellow-500" />
-                    <span>Powered by VirusTotal API</span>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Zap className="h-4 w-4 mr-1 text-yellow-500" />
+                      <span>Powered by VirusTotal API</span>
+                    </div>
                   </div>
-                </div>
 
-                <AnimatePresence>
-                  {tasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onRemove={removeTask}
-                      onDownload={handleDownloadFile}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  {Array.isArray(tasks) &&
+                    tasks.map((task) =>
+                      task && task.id ? (
+                        <ErrorBoundary key={`error-${task.id}`}>
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            onRemove={removeTask}
+                            onDownload={handleDownloadFile}
+                          />
+                        </ErrorBoundary>
+                      ) : null
+                    )}
+                </div>
+              </QueueErrorBoundary>
+            </div>
+          )
+        ) : (
+          <div key="history">
+            <HistoryView
+              entries={historyEntries}
+              total={historyTotal}
+              loading={historyLoading}
+              onLoadHistory={loadHistory}
+              onClearHistory={clearHistory}
+              onDownloadFile={handleHistoryDownload}
+              storageStats={storageStats}
+            />
+          </div>
+        )}
       </main>
 
       <footer className="border-t mt-auto">

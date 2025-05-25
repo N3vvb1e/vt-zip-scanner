@@ -68,6 +68,10 @@ export async function submitFile(file: Blob): Promise<string> {
 export async function getReport(analysisId: string): Promise<AnalysisReport> {
   try {
     const response = await api.get(`${ANALYSIS_URL}/${analysisId}`);
+
+    // Note: VirusTotal API doesn't provide file metadata in analysis responses
+    // We enhance reports with locally calculated hashes in usePersistedQueue.ts
+
     return response.data.data.attributes as AnalysisReport;
   } catch (error) {
     if (axios.isAxiosError(error)) {

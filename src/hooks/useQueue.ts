@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { ScanTask, FileEntry, TaskStatus } from "../types/index";
 import { submitFile, getReport } from "../services/virusTotalService";
-
-// Simple ID generator
-const generateId = () =>
-  Date.now().toString(36) + Math.random().toString(36).substring(2);
+import { generateId } from "../utils/common";
 
 // VirusTotal rate limit: 4 requests per minute
 const REQUEST_LIMIT = 4;
@@ -23,7 +20,10 @@ export function useQueue() {
   // Track how many tasks are completed for progress calculation
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter(
-    (task) => task.status === "completed" || task.status === "error"
+    (task) =>
+      task.status === "completed" ||
+      task.status === "error" ||
+      task.status === "reused"
   ).length;
 
   const progress = {

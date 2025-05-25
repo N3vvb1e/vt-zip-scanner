@@ -6,14 +6,17 @@ export interface FileEntry {
   size: number;
   type: string;
   blob?: Blob;
+  sha256?: string; // File hash for duplicate detection
 }
 
 // Task states
 export type TaskStatus =
   | "pending" // In queue, not yet started
+  | "hashing" // Calculating file hash for duplicate detection
   | "uploading" // Uploading to VirusTotal
   | "scanning" // Scanning on VirusTotal
   | "completed" // Scan completed
+  | "reused" // Reused existing scan result
   | "error"; // Error occurred
 
 // Queue task
