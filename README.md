@@ -1,24 +1,36 @@
 # Secure File Scanner
 
-A React-based web application for scanning files using the VirusTotal API. Built with TypeScript, Vite, and modern tooling for optimal development experience.
+A React-based web application for secure file scanning using the VirusTotal API, with special focus on safe ZIP file handling and malware detection. Built with TypeScript, Vite, and modern tooling for optimal development experience.
 
-## Features
+## Core Features
 
-- File drag-and-drop interface
-- ZIP file processing and analysis
-- Integrated VirusTotal scanning
-- Real-time scan status monitoring
-- Queue management for multiple files
-- Responsive UI with Tailwind CSS
-- Type-safe development with TypeScript
+- **Secure File Processing**
+  - Safe ZIP file handling with path traversal protection
+  - File hash calculation and verification
+  - Dangerous file extension detection
+  - Real-time malware scanning via VirusTotal
+
+- **Modern UI/UX**
+  - Intuitive drag-and-drop interface
+  - Real-time scan status monitoring
+  - Progress tracking for multiple files
+  - Responsive design with Tailwind CSS
+  - Persistent queue management
+
+- **Developer Experience**
+  - Type-safe development with TypeScript
+  - Fast development server with Vite
+  - Comprehensive error boundary handling
+  - Component-based architecture
+  - Automated file hash verification
 
 ## Tech Stack
 
 - React + TypeScript
-- Vite for fast development and building
+- Vite for build tooling
 - Tailwind CSS for styling
 - ESLint for code quality
-- Modern React hooks and components
+- Modern React hooks and patterns
 
 ## Getting Started
 
@@ -32,92 +44,77 @@ A React-based web application for scanning files using the VirusTotal API. Built
 
 1. Clone the repository
 2. Install dependencies:
-
 ```bash
 npm install
 ```
 
 3. Create a `.env` file with your VirusTotal API key:
-
 ```
 VITE_VIRUSTOTAL_API_KEY=your_api_key_here
 ```
 
 4. Start the development server:
-
 ```bash
 npm run dev
 ```
 
-## Development
+## Project Architecture
 
-### Project Structure
-
+### Directory Structure
 ```
 src/
 ├── components/
-│   ├── scanner/     # Scanner-specific components
+│   ├── scanner/     # Core scanning components
+│   │   ├── FileDropzone.tsx
+│   │   ├── HistoryView.tsx
+│   │   ├── QueueSummary.tsx
+│   │   └── TaskCard.tsx
 │   └── ui/          # Reusable UI components
 ├── hooks/           # Custom React hooks
-├── services/        # API services
-├── types/          # TypeScript types
-└── utils/          # Utility functions
+├── services/        # API and persistence services
+├── types/          # TypeScript type definitions
+└── utils/          # Utility functions including security
 ```
 
-### ESLint Configuration
+### Key Components
 
-For production applications, we recommend enabling type-aware lint rules:
+- **FileDropzone**: Handles secure file upload with validation
+- **HistoryView**: Manages scan history and results
+- **QueueSummary**: Displays queue status and progress
+- **TaskCard**: Individual scan result visualization
+- **ErrorBoundary**: Global error handling
 
-```js
-export default tseslint.config({
-  extends: [
-    ...tseslint.configs.recommendedTypeChecked,
-    // Or use strictTypeChecked for stricter rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    parserOptions: {
-      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-});
-```
+### Core Services
 
-For React-specific linting, you can add:
+- **virusTotalService**: 
+  - File submission to VirusTotal
+  - Report retrieval
+  - API key validation
 
-```js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
+- **persistenceService**: 
+  - Queue state management
+  - Scan history persistence
+  - Data recovery
 
-export default tseslint.config({
-  plugins: {
-    "react-x": reactX,
-    "react-dom": reactDom,
-  },
-  rules: {
-    ...reactX.configs["recommended-typescript"].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-});
-```
+### Security Utils
 
-## Key Components
+- **secureZipUtils**:
+  - Path traversal protection
+  - Dangerous extension detection
+  - Safe ZIP creation and handling
 
-- `FileDropzone`: Handles file upload and drag-and-drop functionality
-- `QueueSummary`: Displays scanning queue status and progress
-- `TaskCard`: Individual file scan result display
-- `usePersistedQueue`: Custom hook for managing the scanning queue with persistence and duplicate detection
-- `virusTotalService`: Interface with VirusTotal API
-- `zipUtils`: ZIP file processing utilities
+- **common**:
+  - File hash calculation
+  - Size formatting
+  - Type detection
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create a feature branch
+3. Implement changes with tests
+4. Push to your branch
+5. Create a Pull Request
 
 ## License
 
