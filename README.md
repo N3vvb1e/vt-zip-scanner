@@ -1,44 +1,46 @@
 # Secure File Scanner
 
-A React-based web application for secure file scanning using the VirusTotal API, with special focus on safe ZIP file handling and malware detection. Built with TypeScript, Vite, and modern tooling for optimal development experience.
+A comprehensive React-based web application for secure file scanning and malware detection using the VirusTotal API. Features advanced ZIP file handling, real-time scanning, and an intuitive user interface. Built with TypeScript, Vite, and modern web technologies.
 
 ## Core Features
 
-- **Secure File Processing**
+- **Advanced Security**
+  - Robust ZIP file security with path traversal protection
+  - Multi-layered file validation and hash verification
+  - Malicious file extension detection
+  - Real-time VirusTotal integration for malware scanning
+  - File integrity checks and sanitization
 
-  - Safe ZIP file handling with path traversal protection
-  - File hash calculation and verification
-  - Dangerous file extension detection
-  - Real-time malware scanning via VirusTotal
-
-- **Modern UI/UX**
-
-  - Intuitive drag-and-drop interface
-  - Real-time scan status monitoring
-  - Progress tracking for multiple files
+- **Rich User Experience**
+  - Modern drag-and-drop interface
+  - Live scan status monitoring
+  - Detailed progress tracking for batch processing
   - Responsive design with Tailwind CSS
-  - Persistent queue management
+  - Persistent queue with recovery capabilities
+  - Comprehensive scan history management
 
-- **Developer Experience**
-  - Type-safe development with TypeScript
-  - Fast development server with Vite
-  - Comprehensive error boundary handling
+- **Developer-Focused**
+  - Full TypeScript support
+  - Vite-powered development environment
   - Component-based architecture
-  - Automated file hash verification
+  - Custom React hooks for business logic
+  - Extensive error handling
+  - Repository pattern for data management
 
 ## Tech Stack
 
-- React + TypeScript
+- React 18+ with TypeScript
 - Vite for build tooling
 - Tailwind CSS for styling
+- IndexedDB for local storage
 - ESLint for code quality
-- Modern React hooks and patterns
+- JSZip for ZIP processing
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js (latest LTS version recommended)
+- Node.js (v18+ recommended)
 - NPM or Yarn
 - VirusTotal API key
 
@@ -46,83 +48,90 @@ A React-based web application for secure file scanning using the VirusTotal API,
 
 1. Clone the repository
 2. Install dependencies:
-
 ```bash
 npm install
 ```
 
-3. Create a `.env` file with your VirusTotal API key:
-
-```
+3. Configure environment variables:
+```bash
+# .env
 VITE_VT_API_KEY=your_api_key_here
 ```
 
-4. Start the development server:
-
+4. Start development server:
 ```bash
 npm run dev
 ```
 
-## Project Architecture
+## Architecture
 
-### Directory Structure
+### Project Structure
 
 ```
 src/
 ├── components/
-│   ├── scanner/     # Core scanning components
-│   │   ├── FileDropzone.tsx
-│   │   ├── HistoryView.tsx
-│   │   ├── QueueSummary.tsx
-│   │   └── TaskCard.tsx
-│   └── ui/          # Reusable UI components
-├── hooks/           # Custom React hooks
-├── services/        # API and persistence services
-├── types/          # TypeScript type definitions
-└── utils/          # Utility functions including security
+│   ├── scanner/          # Core scanning components
+│   └── ui/               # Reusable UI components
+├── hooks/                # Custom React hooks
+├── services/
+│   ├── database/         # Database abstraction
+│   ├── repositories/     # Data access layer
+│   └── virusTotal/       # VirusTotal integration
+├── utils/
+│   ├── zip/             # ZIP processing utilities
+│   └── common.ts        # Shared utilities
+└── types/               # TypeScript definitions
 ```
 
 ### Key Components
 
-- **FileDropzone**: Handles secure file upload with validation
-- **HistoryView**: Manages scan history and results
-- **QueueSummary**: Displays queue status and progress
-- **TaskCard**: Individual scan result visualization
-- **ErrorBoundary**: Global error handling
+- **FileDropzone**: Handles file uploads with validation
+- **HistoryView**: Manages scan history and results display
+- **QueueSummary**: Provides queue status and management
+- **TaskCard**: Individual scan task visualization
+- **ErrorBoundary**: Application-wide error handling
 
 ### Core Services
 
-- **virusTotalService**:
+- **Database Layer**
+  - IndexedDB-based storage
+  - Repository pattern implementation
+  - Transaction management
+  - Data migration support
 
-  - File submission to VirusTotal
-  - Report retrieval
-  - API key validation
+- **VirusTotal Integration**
+  - File submission handling
+  - Report retrieval and parsing
+  - Rate limiting
+  - Error recovery
 
-- **persistenceService**:
-  - Queue state management
-  - Scan history persistence
-  - Data recovery
+- **ZIP Processing**
+  - Secure extraction and validation
+  - Path traversal prevention
+  - Malicious content detection
+  - Size estimation and validation
 
-### Security Utils
+### Utilities
 
-- **secureZipUtils**:
-
-  - Path traversal protection
-  - Dangerous extension detection
-  - Safe ZIP creation and handling
-
-- **common**:
+- **Security**
   - File hash calculation
-  - Size formatting
-  - Type detection
+  - Extension validation
+  - Path sanitization
+  - Content type detection
+
+- **Queue Management**
+  - Persistent queue state
+  - Task prioritization
+  - Progress tracking
+  - Error recovery
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Implement changes with tests
-4. Push to your branch
-5. Create a Pull Request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
