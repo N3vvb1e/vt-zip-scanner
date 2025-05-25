@@ -728,26 +728,16 @@ export class PersistenceService {
           entry.status === "completed" || entry.status === "reused";
 
         if (!statusMatch) {
-          console.log(
-            `  ⏭️ Entry ${entry.id} (${entry.fileName}): skipping due to status (${entry.status})`
-          );
           return false;
         }
 
         if (!entry.report?.meta?.file_info) {
-          console.log(
-            `  ❌ Entry ${entry.id} (${entry.fileName}) has no file_info - cannot use hash matching`
-          );
           return false;
         }
 
         const fileInfo = entry.report.meta.file_info;
         const hashMatch = fileInfo.sha256 === sha256;
         const sizeMatch = fileInfo.size === size;
-
-        console.log(
-          `  📋 Entry ${entry.id} (${entry.fileName}): hash=${hashMatch}, size=${sizeMatch}, status=${statusMatch} (${entry.status})`
-        );
 
         return hashMatch && sizeMatch && statusMatch;
       });
@@ -788,22 +778,12 @@ export class PersistenceService {
           !entry.report.meta.file_info.size
       );
 
-      console.log(
-        `🧹 Found ${invalidEntries.length} invalid history entries out of ${allEntries.length} total`
-      );
-
       // Delete invalid entries
       for (const entry of invalidEntries) {
         await this.deleteRequest(store, entry.id);
-        console.log(
-          `  🗑️ Deleted invalid entry: ${entry.id} (${entry.fileName})`
-        );
       }
 
       await this.completeTransaction(transaction);
-      console.log(
-        `✅ Cleanup complete: removed ${invalidEntries.length} invalid entries`
-      );
 
       return invalidEntries.length;
     } catch (error) {

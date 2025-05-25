@@ -307,7 +307,10 @@ export function HistoryView({
           <Button
             variant={showUniqueOnly ? "default" : "outline"}
             size="sm"
-            onClick={() => setShowUniqueOnly(!showUniqueOnly)}
+            onClick={() => {
+              setShowUniqueOnly(!showUniqueOnly);
+              setCurrentPage(0); // Reset to first page when switching modes
+            }}
           >
             {showUniqueOnly ? "Unique Files" : "All Scans"}
           </Button>
@@ -618,7 +621,7 @@ export function HistoryView({
       )}
 
       {/* Pagination */}
-      {total > pageSize && (
+      {!showUniqueOnly && total > pageSize && (
         <div className="mt-6 flex items-center justify-center gap-2">
           <Button
             variant="outline"

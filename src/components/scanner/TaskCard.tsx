@@ -22,20 +22,8 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
-  // Safety check for task object
-  if (!task || !task.file) {
-    console.warn("TaskCard: Invalid task or missing file", task);
-    return null;
-  }
-
-  // Safety check for file blob (required for downloads)
-  if (task.status === "completed" && !task.file.blob) {
-    console.warn("TaskCard: Completed task missing file blob", task);
-    // Still render the card but disable download functionality
-  }
-
   const getStatusBadge = () => {
-    switch (task?.status) {
+    switch (task.status) {
       case "pending":
         return <Badge variant="secondary">Pending</Badge>;
       case "hashing":
@@ -99,8 +87,7 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
   const isCompleted = task.status === "completed" || task.status === "reused";
   const isSafe = isCompleted && task.report?.stats.malicious === 0;
   const isError = task.status === "error";
-  const hasBlob = Boolean(task.file.blob);
-  const canDownload = isSafe && hasBlob;
+  const canDownload = isSafe && task.file.blob;
 
   return (
     <motion.div
@@ -116,15 +103,12 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium truncate pr-2">
-                {task.file?.name || "Unknown file"}
-              </h3>
+              <h3 className="font-medium truncate pr-2">{task.file.name}</h3>
               {getStatusBadge()}
             </div>
 
             <p className="text-sm text-muted-foreground mt-1">
-              {formatFileSize(task.file?.size || 0)} •{" "}
-              {task.file?.type || "Unknown type"}
+              {formatFileSize(task.file.size)} • {task.file.type}
             </p>
 
             {isError && task.error && (
@@ -179,7 +163,7 @@ export function TaskCard({ task, onRemove, onDownload }: TaskCardProps) {
             </Button>
           )}
 
-          {isSafe && !hasBlob && (
+          {isSafe && !task.file.blob && (
             <Button
               variant="outline"
               size="sm"

@@ -32,14 +32,19 @@ A React-based web application for scanning files using the VirusTotal API. Built
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
+
 3. Create a `.env` file with your VirusTotal API key:
+
 ```
 VITE_VIRUSTOTAL_API_KEY=your_api_key_here
 ```
+
 4. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -72,29 +77,29 @@ export default tseslint.config({
   ],
   languageOptions: {
     parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
       tsconfigRootDir: import.meta.dirname,
     },
   },
-})
+});
 ```
 
 For React-specific linting, you can add:
 
 ```js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+import reactX from "eslint-plugin-react-x";
+import reactDom from "eslint-plugin-react-dom";
 
 export default tseslint.config({
   plugins: {
-    'react-x': reactX,
-    'react-dom': reactDom,
+    "react-x": reactX,
+    "react-dom": reactDom,
   },
   rules: {
-    ...reactX.configs['recommended-typescript'].rules,
+    ...reactX.configs["recommended-typescript"].rules,
     ...reactDom.configs.recommended.rules,
   },
-})
+});
 ```
 
 ## Key Components
@@ -102,7 +107,7 @@ export default tseslint.config({
 - `FileDropzone`: Handles file upload and drag-and-drop functionality
 - `QueueSummary`: Displays scanning queue status and progress
 - `TaskCard`: Individual file scan result display
-- `useQueue`: Custom hook for managing the scanning queue
+- `usePersistedQueue`: Custom hook for managing the scanning queue with persistence and duplicate detection
 - `virusTotalService`: Interface with VirusTotal API
 - `zipUtils`: ZIP file processing utilities
 

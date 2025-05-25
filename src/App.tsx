@@ -8,7 +8,7 @@ import { QueueSummary } from "./components/scanner/QueueSummary";
 import { Button } from "./components/ui/Button";
 import { usePersistedQueue } from "./hooks/usePersistedQueue";
 import { HistoryView } from "./components/scanner/HistoryView";
-import { ErrorBoundary, QueueErrorBoundary } from "./components/ErrorBoundary";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import type { FileEntry, ScanTask } from "./types";
 import { createSafeZip } from "./utils/secureZipUtils";
 import { validateApiKey } from "./services/virusTotalService";
@@ -324,7 +324,10 @@ function App() {
             </div>
           ) : (
             <div key="results">
-              <QueueErrorBoundary>
+              <ErrorBoundary
+                title="Queue Error"
+                description="There was an error with the scanning queue. This might be due to a large number of files or a processing issue."
+              >
                 <QueueSummary
                   tasks={tasks}
                   progress={progress}
@@ -338,7 +341,7 @@ function App() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-xl font-medium">
-                      Files ({Array.isArray(tasks) ? tasks.length : 0})
+                      Files ({tasks.length})
                     </h2>
 
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -347,21 +350,16 @@ function App() {
                     </div>
                   </div>
 
-                  {Array.isArray(tasks) &&
-                    tasks.map((task) =>
-                      task && task.id ? (
-                        <ErrorBoundary key={`error-${task.id}`}>
-                          <TaskCard
-                            key={task.id}
-                            task={task}
-                            onRemove={removeTask}
-                            onDownload={handleDownloadFile}
-                          />
-                        </ErrorBoundary>
-                      ) : null
-                    )}
+                  {tasks.map((task) => (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onRemove={removeTask}
+                      onDownload={handleDownloadFile}
+                    />
+                  ))}
                 </div>
-              </QueueErrorBoundary>
+              </ErrorBoundary>
             </div>
           )
         ) : (

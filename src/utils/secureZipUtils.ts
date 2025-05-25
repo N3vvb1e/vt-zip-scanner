@@ -283,11 +283,6 @@ export async function processZipFileSecurely(
     throw error;
   }
 
-  // If secure but has warnings, log them
-  if (securityReport.warnings.length > 0) {
-    console.warn("ZIP file warnings:", securityReport.warnings);
-  }
-
   // Extract files with additional runtime checks
   const zip = await JSZip.loadAsync(file);
   const fileEntries: FileEntry[] = [];

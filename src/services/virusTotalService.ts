@@ -9,12 +9,10 @@ const ANALYSIS_URL = `${VT_API_URL}/analyses`;
 // Get API key from environment variable
 const VT_API_KEY = import.meta.env.VITE_VT_API_KEY || "";
 
-// Debug API key (don't log the actual key, just whether it exists)
-console.log("API Key status:", {
-  exists: !!VT_API_KEY,
-  length: VT_API_KEY?.length || 0,
-  firstChars: VT_API_KEY?.substring(0, 8) + "..." || "none",
-});
+// Validate API key exists
+if (!VT_API_KEY) {
+  console.warn("VirusTotal API key not found in environment variables");
+}
 
 // Create axios instance with default config
 const api = axios.create({
@@ -105,24 +103,19 @@ export async function validateApiKey(): Promise<boolean> {
 
   try {
     await api.get(`${VT_API_URL}/users/current`);
-    console.log("API key validation successful");
+
     return true;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status;
-      const responseData = error.response?.data;
-
-      console.log(`API validation failed with status: ${status}`, responseData);
 
       // Rate limit (429) means the API key is valid, just overused
       if (status === 429) {
-        console.log("Rate limit hit, but API key is valid");
         return true;
       }
 
       // 401/403 means invalid API key or missing header
       if (status === 401 || status === 403) {
-        console.log("Invalid API key or authentication error");
         return false;
       }
 

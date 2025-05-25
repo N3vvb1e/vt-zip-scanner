@@ -92,10 +92,8 @@ export function usePersistedQueue() {
           setTasks(savedTasks);
 
           // Auto-start if enabled and there are pending tasks
-          const hasPending = savedTasks.some((t) => t?.status === "pending");
-          const hasCompleted = savedTasks.some(
-            (t) => t?.status === "completed"
-          );
+          const hasPending = savedTasks.some((t) => t.status === "pending");
+          const hasCompleted = savedTasks.some((t) => t.status === "completed");
 
           console.log(
             `Loaded tasks: ${savedTasks.length} total, pending: ${hasPending}, completed: ${hasCompleted}`
@@ -138,7 +136,6 @@ export function usePersistedQueue() {
         await persistenceService.saveQueue(tasks);
         lastSaveTime.current = now;
         hasUnsavedChanges.current = false;
-        console.log("Queue state saved");
       } catch (error) {
         console.error("Failed to save queue:", error);
       }
@@ -206,13 +203,7 @@ export function usePersistedQueue() {
           zipFileName;
       }
 
-      setTasks((prevTasks) => {
-        if (!Array.isArray(prevTasks)) {
-          console.error("addTask: prevTasks is not an array", prevTasks);
-          return [newTask];
-        }
-        return [...prevTasks, newTask];
-      });
+      setTasks((prevTasks) => [...prevTasks, newTask]);
       hasUnsavedChanges.current = true;
     } catch (error) {
       console.error("Error in addTask:", error);
@@ -238,7 +229,6 @@ export function usePersistedQueue() {
       return task;
     });
 
-    console.log(`Adding ${newTasks.length} new tasks to queue`);
     setTasks((prevTasks) => [...prevTasks, ...newTasks]);
     hasUnsavedChanges.current = true;
   }, []);
@@ -280,7 +270,6 @@ export function usePersistedQueue() {
 
   // Clear all tasks
   const clearQueue = useCallback(async () => {
-    console.log("Clearing queue and stopping processing");
     setIsProcessing(false);
     processingRef.current = false;
     processingLoopRunning.current = false;
@@ -643,14 +632,6 @@ export function usePersistedQueue() {
         }
 
         // Step 3: No existing scan found, proceed with new scan
-        console.log(
-          `🔍 NEW SCAN: No existing scan found for "${
-            nextTask.file.name
-          }" (SHA256: ${fileHashes.sha256.substring(
-            0,
-            16
-          )}...), proceeding with VirusTotal API`
-        );
 
         updateTask(nextTask.id, {
           status: "uploading" as TaskStatus,
@@ -680,9 +661,6 @@ export function usePersistedQueue() {
         return true;
       } catch (error) {
         if (error instanceof Error && error.message === "RATE_LIMIT") {
-          console.log(
-            `Rate limited while submitting ${nextTask.file.name}, will retry`
-          );
           updateTask(nextTask.id, {
             status: "pending" as TaskStatus,
             progress: 0,
