@@ -118,6 +118,7 @@ export function usePersistedQueue() {
     isProcessing: processing.isProcessing,
     startProcessing: processing.startProcessing,
     stopProcessing: processing.stopProcessing,
+    rateLimiter: processing.rateLimiter,
 
     // Persistence state
     isInitialized,

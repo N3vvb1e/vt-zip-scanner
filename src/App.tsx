@@ -13,6 +13,8 @@ import type { FileEntry, ScanTask } from "./types";
 import { createSafeZip } from "./utils/secureZipUtils";
 import { validateApiKey } from "./services/virusTotalService";
 import { generateId } from "./utils/common";
+import { ApiRateLimitIndicator } from "./components/ui/ApiRateLimitIndicator";
+import { useApiRateLimit } from "./hooks/useApiRateLimit";
 
 function App() {
   const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
@@ -41,7 +43,11 @@ function App() {
     clearHistory,
     getHistoryFile,
     getStorageStats,
+    rateLimiter,
   } = usePersistedQueue();
+
+  // API Rate Limit tracking using the actual rate limiter from queue processing
+  const { rateLimitData } = useApiRateLimit({ rateLimiter });
 
   // Load storage stats for history view
   const [storageStats, setStorageStats] = useState<
@@ -323,6 +329,13 @@ function App() {
               </Button>
             </div>
 
+            {/* API Rate Limit Indicator */}
+            <ApiRateLimitIndicator
+              rateLimitData={rateLimitData}
+              compact={true}
+              className="hidden sm:flex"
+            />
+
             <Button
               variant="ghost"
               size="sm"
@@ -350,18 +363,28 @@ function App() {
             className="border-b bg-muted/30 overflow-hidden"
           >
             <div className="container mx-auto px-4 py-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Settings</h3>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={autoStartEnabled}
-                      onChange={handleToggleAutoStart}
-                      className="rounded"
-                    />
-                    Auto-start scanning when files are uploaded
-                  </label>
+              <div className="flex items-start justify-between gap-6">
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium mb-4">Settings</h3>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={autoStartEnabled}
+                        onChange={handleToggleAutoStart}
+                        className="rounded"
+                      />
+                      Auto-start scanning when files are uploaded
+                    </label>
+                  </div>
+                </div>
+
+                {/* Detailed API Rate Limit Info */}
+                <div className="w-80">
+                  <ApiRateLimitIndicator
+                    rateLimitData={rateLimitData}
+                    compact={false}
+                  />
                 </div>
               </div>
             </div>

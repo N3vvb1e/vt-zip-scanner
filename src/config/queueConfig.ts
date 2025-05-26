@@ -31,4 +31,6 @@ export const PROCESSING_CONFIG = {
   SINGLE_FILE_WAIT_TIME: 2000, // 2 seconds wait for single files
   RETRY_DELAY_MULTIPLIER: 2, // Multiply by this for retry delays
   MAX_RETRIES: 3, // Maximum retry attempts
+  ENABLE_CONCURRENT_PROCESSING: false, // Enable concurrent uploads
+  MAX_CONCURRENT_UPLOADS: 2, // Maximum simultaneous uploads
 } as const;

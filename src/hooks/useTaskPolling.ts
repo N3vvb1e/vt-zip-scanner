@@ -23,7 +23,6 @@ export function useTaskPolling(
   onTaskCompleted: (taskId: string, report: AnalysisReport) => Promise<void>,
   onTaskError: (taskId: string, error: unknown) => Promise<void>,
   canMakeRequest: () => boolean,
-  recordRequest: () => void,
   getWaitTime: () => number,
   isProcessingActive: () => boolean,
   getCurrentlyProcessing: () => Set<string>,
@@ -200,7 +199,8 @@ export function useTaskPolling(
       }
 
       try {
-        recordRequest();
+        // Note: We don't record polling requests in upload quota
+        // Polling is operational overhead, not file upload quota
         const report = await getReport(analysisId);
 
         if (report && Object.keys(report.results || {}).length > 0) {
@@ -221,7 +221,6 @@ export function useTaskPolling(
       onTaskError,
       canMakeRequest,
       getWaitTime,
-      recordRequest,
       onTaskCompleted,
       handlePendingScan,
       handleScanError,
