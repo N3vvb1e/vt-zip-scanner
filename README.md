@@ -5,6 +5,7 @@ A comprehensive React-based web application for secure file scanning and malware
 ## Core Features
 
 - **Advanced Security**
+
   - Robust ZIP file security with path traversal protection
   - Multi-layered file validation and hash verification
   - Malicious file extension detection
@@ -12,6 +13,7 @@ A comprehensive React-based web application for secure file scanning and malware
   - File integrity checks and sanitization
 
 - **Rich User Experience**
+
   - Modern drag-and-drop interface with FileDropzone component
   - Live scan status monitoring and progress tracking
   - Comprehensive scan history management with HistoryView
@@ -23,7 +25,7 @@ A comprehensive React-based web application for secure file scanning and malware
   - React 18+ with custom hooks for business logic
   - Vite-powered development environment
   - IndexedDB storage with repository pattern
-  - Concurrent processing with rate limiting
+  - Sequential processing with intelligent rate limiting
   - Advanced error handling and recovery
 
 ## Tech Stack
@@ -47,17 +49,20 @@ A comprehensive React-based web application for secure file scanning and malware
 
 1. Clone the repository
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Configure environment variables:
+
 ```bash
 # .env
 VITE_VT_API_KEY=your_api_key_here
 ```
 
 4. Start development server:
+
 ```bash
 npm run dev
 ```
@@ -85,6 +90,7 @@ src/
 ### Key Components
 
 - **Scanner Components**
+
   - FileDropzone: File upload handling with validation
   - HistoryView: Scan history and results management
   - QueueSummary: Queue status and controls
@@ -99,11 +105,13 @@ src/
 ### Core Services
 
 - **Database Layer**
+
   - BaseRepository: Generic CRUD operations
   - DatabaseManager: IndexedDB initialization
   - Specialized repositories for files, history, queue, and settings
 
 - **VirusTotal Integration**
+
   - VirusTotalClient: API communication
   - VirusTotalService: Business logic
   - Rate limiting and error handling
@@ -117,6 +125,7 @@ src/
 ### Utilities
 
 - **File Processing**
+
   - Hash calculation
   - File type detection
   - Size formatting
@@ -124,9 +133,9 @@ src/
 
 - **Queue Management**
   - Persistent queue state
-  - Concurrent processing
-  - Rate limiting
-  - Error recovery
+  - Sequential processing with intelligent scheduling
+  - Rate limiting and API quota management
+  - Error recovery and retry logic
 
 ## Contributing
 
