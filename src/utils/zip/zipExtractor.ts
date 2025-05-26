@@ -8,7 +8,6 @@ import type { FileEntry } from "../../types";
 import {
   generateId,
   formatFileSize,
-  getFileName,
   getFileType,
   calculateFileHash,
 } from "../common";
@@ -124,7 +123,7 @@ async function extractFileEntry(
 
     fileEntries.push({
       id: generateId(),
-      name: getFileName(filename),
+      name: filename.split("/").pop() || filename,
       path: filename,
       size: blob.size,
       type: fileType,
@@ -203,7 +202,7 @@ export async function getZipFileListing(file: File): Promise<{
 
     files.push({
       path,
-      name: getFileName(path),
+      name: path.split("/").pop() || path,
       size,
       isDirectory: zipEntry.dir,
       isSafe: pathCheck.safe,

@@ -12,11 +12,10 @@ import {
 } from "../services/persistenceService";
 import { calculateFileHashes } from "../utils/common";
 import { RATE_LIMIT_CONFIG, PROCESSING_CONFIG } from "../config/queueConfig";
-import { RateLimiter } from "../utils/rateLimiter";
-import { ConcurrentRateLimiter } from "../utils/concurrentRateLimiter";
+// Removed concurrent rate limiter imports
 
 export interface TaskProcessorHook {
-  processTask: (task: ScanTask, requestId?: string) => Promise<void>;
+  processTask: (task: ScanTask) => Promise<void>;
 }
 
 export function useTaskProcessor(
@@ -26,8 +25,7 @@ export function useTaskProcessor(
   startPolling: (taskId: string, analysisId: string) => void,
   getCurrentTasks: () => ScanTask[],
   getCurrentlyProcessing: () => Set<string>,
-  getScanStartTimes: () => Map<string, number>,
-  rateLimiter?: RateLimiter | ConcurrentRateLimiter // Optional rate limiter for concurrent mode
+  getScanStartTimes: () => Map<string, number>
 ): TaskProcessorHook {
   // Handle duplicate task (reuse existing scan)
   const handleDuplicateTask = useCallback(
@@ -95,30 +93,18 @@ export function useTaskProcessor(
 
   // Submit new task to VirusTotal
   const submitNewTask = useCallback(
-    async (
-      task: ScanTask,
-      fileHashes: { sha256: string; size: number },
-      isConcurrentMode: boolean = false
-    ) => {
+    async (task: ScanTask, fileHashes: { sha256: string; size: number }) => {
       updateTask(task.id, {
         status: "uploading" as TaskStatus,
         progress: 10,
       });
 
       console.log(
-        `📤 Submitting file: ${task.file.name} (${task.file.size} bytes) ${
-          isConcurrentMode ? "[CONCURRENT]" : "[SEQUENTIAL]"
-        }`
+        `📤 Submitting file: ${task.file.name} (${task.file.size} bytes)`
       );
 
       // Only record request for actual API calls (not duplicates)
-      if (rateLimiter && rateLimiter.recordRequest) {
-        // Use the provided rate limiter (concurrent mode)
-        rateLimiter.recordRequest();
-      } else {
-        // Use the traditional recordRequest function (sequential mode)
-        recordRequest();
-      }
+      recordRequest();
       const analysisId = await submitFile(task.file.blob!);
 
       console.log(`File submitted successfully, analysis ID: ${analysisId}`);
@@ -145,8 +131,8 @@ export function useTaskProcessor(
 
       setTimeout(() => startPolling(task.id, analysisId), pollDelay);
 
-      // Add delay between submissions to spread API load (skip for single files and concurrent mode)
-      if (currentTaskCount > 1 && !isConcurrentMode) {
+      // Add delay between submissions to spread API load (skip for single files)
+      if (currentTaskCount > 1) {
         await new Promise((resolve) =>
           setTimeout(resolve, RATE_LIMIT_CONFIG.BATCH_SUBMIT_DELAY)
         );
@@ -158,7 +144,6 @@ export function useTaskProcessor(
       getCurrentTasks,
       getScanStartTimes,
       startPolling,
-      rateLimiter,
     ]
   );
 
@@ -203,18 +188,9 @@ export function useTaskProcessor(
 
   // Main task processing function
   const processTask = useCallback(
-    async (task: ScanTask, requestId?: string) => {
+    async (task: ScanTask) => {
       try {
-        // Log processing mode
-        if (requestId) {
-          console.log(
-            `🔄 Processing task ${task.id} (${task.file.name}) with concurrent slot ${requestId}`
-          );
-        } else {
-          console.log(
-            `🔄 Processing task ${task.id} (${task.file.name}) in sequential mode`
-          );
-        }
+        console.log(`🔄 Processing task ${task.id} (${task.file.name})`);
 
         // Step 1: Calculate file hash for duplicate detection
         updateTask(task.id, {
@@ -238,8 +214,7 @@ export function useTaskProcessor(
         }
 
         // Step 3: No existing scan found, proceed with new scan
-        const isConcurrentMode = !!requestId; // If requestId is provided, we're in concurrent mode
-        await submitNewTask(task, fileHashes, isConcurrentMode);
+        await submitNewTask(task, fileHashes);
       } catch (error) {
         await handleTaskError(task, error);
       }

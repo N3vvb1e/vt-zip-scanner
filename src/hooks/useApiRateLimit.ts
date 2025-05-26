@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { RateLimiter } from "../utils/rateLimiter";
-import { ConcurrentRateLimiter } from "../utils/concurrentRateLimiter";
 import { RATE_LIMIT_CONFIG } from "../config/queueConfig";
 import type { ApiRateLimitData } from "../components/ui/ApiRateLimitIndicator";
 
 export interface UseApiRateLimitOptions {
   updateInterval?: number; // How often to update the data (ms)
-  rateLimiter?: RateLimiter | ConcurrentRateLimiter; // Optional external rate limiter instance
+  rateLimiter?: RateLimiter; // Optional external rate limiter instance
 }
 
 export function useApiRateLimit(options: UseApiRateLimitOptions = {}) {

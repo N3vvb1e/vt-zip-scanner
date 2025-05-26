@@ -6,11 +6,9 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { ScanTask } from "../types/index";
 import { RateLimiter } from "../utils/rateLimiter";
-import { ConcurrentRateLimiter } from "../utils/concurrentRateLimiter";
-import { RATE_LIMIT_CONFIG, PROCESSING_CONFIG } from "../config/queueConfig";
+import { RATE_LIMIT_CONFIG } from "../config/queueConfig";
 import { useTaskPolling } from "./useTaskPolling";
 import { useTaskProcessor } from "./useTaskProcessor";
-import { useConcurrentProcessing } from "./useConcurrentProcessing";
 import { useProcessingLoop } from "./useProcessingLoop";
 import { useTaskCompletion } from "./useTaskCompletion";
 
@@ -18,7 +16,7 @@ export interface QueueProcessingHook {
   isProcessing: boolean;
   startProcessing: () => void;
   stopProcessing: () => void;
-  rateLimiter: RateLimiter | ConcurrentRateLimiter;
+  rateLimiter: RateLimiter;
 }
 
 export function useQueueProcessing(
@@ -70,25 +68,7 @@ export function useQueueProcessing(
   );
   const getWaitTime = useCallback(() => rateLimiter.current.getWaitTime(), []);
 
-  // Choose processing method based on configuration
-  const useConcurrentMode = PROCESSING_CONFIG.ENABLE_CONCURRENT_PROCESSING;
-
-  // Concurrent processing (optional)
-  const concurrentProcessing = useConcurrentProcessing(
-    getCurrentTasks,
-    () => Promise.resolve(), // Placeholder, will be replaced
-    (taskId: string, status: string) =>
-      updateTask(taskId, {
-        status: status as
-          | "pending"
-          | "hashing"
-          | "uploading"
-          | "scanning"
-          | "completed"
-          | "error"
-          | "reused",
-      })
-  );
+  // Removed concurrent processing - using sequential processing only
 
   // Initialize focused hooks
   const taskCompletion = useTaskCompletion(
@@ -117,8 +97,7 @@ export function useQueueProcessing(
     taskPolling.pollForResults,
     getCurrentTasks,
     getCurrentlyProcessing,
-    getScanStartTimes,
-    useConcurrentMode ? concurrentProcessing.rateLimiter : undefined
+    getScanStartTimes
   );
 
   const processingLoop = useProcessingLoop(
@@ -134,48 +113,29 @@ export function useQueueProcessing(
 
   // Start processing the queue
   const startProcessing = useCallback(() => {
-    console.log(
-      `Starting processing... (${
-        useConcurrentMode ? "concurrent" : "sequential"
-      } mode)`
-    );
+    console.log("Starting processing...");
     setIsProcessing(true);
     processingRef.current = true;
-
-    if (useConcurrentMode) {
-      concurrentProcessing.startProcessing();
-    }
-  }, [useConcurrentMode, concurrentProcessing]);
+  }, []);
 
   // Stop processing the queue
   const stopProcessing = useCallback(() => {
     console.log("Stopping processing...");
     setIsProcessing(false);
     processingRef.current = false;
+  }, []);
 
-    if (useConcurrentMode) {
-      concurrentProcessing.stopProcessing();
-    }
-  }, [useConcurrentMode, concurrentProcessing]);
-
-  // Start processing loop when enabled (only for sequential mode)
+  // Start processing loop when enabled
   useEffect(() => {
-    if (
-      isProcessing &&
-      !useConcurrentMode &&
-      !processingLoop.isLoopRunning() &&
-      isInitialized
-    ) {
+    if (isProcessing && !processingLoop.isLoopRunning() && isInitialized) {
       processingLoop.runProcessingLoop();
     }
-  }, [isProcessing, useConcurrentMode, processingLoop, isInitialized]);
+  }, [isProcessing, processingLoop, isInitialized]);
 
   return {
     isProcessing,
     startProcessing,
     stopProcessing,
-    rateLimiter: useConcurrentMode
-      ? concurrentProcessing.rateLimiter
-      : rateLimiter.current,
+    rateLimiter: rateLimiter.current,
   };
 }
