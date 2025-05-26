@@ -8,24 +8,23 @@ A comprehensive React-based web application for secure file scanning and malware
   - Robust ZIP file security with path traversal protection
   - Multi-layered file validation and hash verification
   - Malicious file extension detection
-  - Real-time VirusTotal integration for malware scanning
+  - Real-time VirusTotal API integration for malware scanning
   - File integrity checks and sanitization
 
 - **Rich User Experience**
-  - Modern drag-and-drop interface
-  - Live scan status monitoring
-  - Detailed progress tracking for batch processing
-  - Responsive design with Tailwind CSS
-  - Persistent queue with recovery capabilities
-  - Comprehensive scan history management
+  - Modern drag-and-drop interface with FileDropzone component
+  - Live scan status monitoring and progress tracking
+  - Comprehensive scan history management with HistoryView
+  - Queue management and task visualization with QueueSummary and TaskCard
+  - Rate limit monitoring with ApiRateLimitIndicator
 
-- **Developer-Focused**
-  - Full TypeScript support
+- **Technical Features**
+  - Full TypeScript implementation
+  - React 18+ with custom hooks for business logic
   - Vite-powered development environment
-  - Component-based architecture
-  - Custom React hooks for business logic
-  - Extensive error handling
-  - Repository pattern for data management
+  - IndexedDB storage with repository pattern
+  - Concurrent processing with rate limiting
+  - Advanced error handling and recovery
 
 ## Tech Stack
 
@@ -33,8 +32,8 @@ A comprehensive React-based web application for secure file scanning and malware
 - Vite for build tooling
 - Tailwind CSS for styling
 - IndexedDB for local storage
-- ESLint for code quality
 - JSZip for ZIP processing
+- ESLint for code quality
 
 ## Getting Started
 
@@ -74,55 +73,59 @@ src/
 │   └── ui/               # Reusable UI components
 ├── hooks/                # Custom React hooks
 ├── services/
-│   ├── database/         # Database abstraction
+│   ├── database/         # IndexedDB abstraction
 │   ├── repositories/     # Data access layer
 │   └── virusTotal/       # VirusTotal integration
 ├── utils/
-│   ├── zip/             # ZIP processing utilities
+│   ├── zip/             # ZIP security and processing
 │   └── common.ts        # Shared utilities
 └── types/               # TypeScript definitions
 ```
 
 ### Key Components
 
-- **FileDropzone**: Handles file uploads with validation
-- **HistoryView**: Manages scan history and results display
-- **QueueSummary**: Provides queue status and management
-- **TaskCard**: Individual scan task visualization
-- **ErrorBoundary**: Application-wide error handling
+- **Scanner Components**
+  - FileDropzone: File upload handling with validation
+  - HistoryView: Scan history and results management
+  - QueueSummary: Queue status and controls
+  - TaskCard: Individual scan task display
+
+- **UI Components**
+  - ApiRateLimitIndicator: API usage monitoring
+  - Badge: Status indicators
+  - Button: Styled action buttons
+  - Progress: Task progress visualization
 
 ### Core Services
 
 - **Database Layer**
-  - IndexedDB-based storage
-  - Repository pattern implementation
-  - Transaction management
-  - Data migration support
+  - BaseRepository: Generic CRUD operations
+  - DatabaseManager: IndexedDB initialization
+  - Specialized repositories for files, history, queue, and settings
 
 - **VirusTotal Integration**
-  - File submission handling
-  - Report retrieval and parsing
-  - Rate limiting
-  - Error recovery
+  - VirusTotalClient: API communication
+  - VirusTotalService: Business logic
+  - Rate limiting and error handling
 
 - **ZIP Processing**
-  - Secure extraction and validation
-  - Path traversal prevention
-  - Malicious content detection
-  - Size estimation and validation
+  - Path validation and sanitization
+  - Security analysis and checks
+  - Extraction and creation utilities
+  - Size estimation
 
 ### Utilities
 
-- **Security**
-  - File hash calculation
-  - Extension validation
-  - Path sanitization
-  - Content type detection
+- **File Processing**
+  - Hash calculation
+  - File type detection
+  - Size formatting
+  - Content validation
 
 - **Queue Management**
   - Persistent queue state
-  - Task prioritization
-  - Progress tracking
+  - Concurrent processing
+  - Rate limiting
   - Error recovery
 
 ## Contributing
