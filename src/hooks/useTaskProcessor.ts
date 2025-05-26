@@ -12,7 +12,6 @@ import {
 } from "../services/persistenceService";
 import { calculateFileHashes } from "../utils/common";
 import { RATE_LIMIT_CONFIG, PROCESSING_CONFIG } from "../config/queueConfig";
-// Removed concurrent rate limiter imports
 
 export interface TaskProcessorHook {
   processTask: (task: ScanTask) => Promise<void>;

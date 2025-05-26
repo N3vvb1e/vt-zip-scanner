@@ -15,6 +15,7 @@ import { validateApiKey } from "./services/virusTotalService";
 import { generateId } from "./utils/common";
 import { ApiRateLimitIndicator } from "./components/ui/ApiRateLimitIndicator";
 import { useApiRateLimit } from "./hooks/useApiRateLimit";
+import { ThemeToggle } from "./components/ui/ThemeToggle";
 
 function App() {
   const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
@@ -336,6 +337,9 @@ function App() {
               className="hidden sm:flex"
             />
 
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             <Button
               variant="ghost"
               size="sm"
@@ -366,7 +370,7 @@ function App() {
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1">
                   <h3 className="text-lg font-medium mb-4">Settings</h3>
-                  <div className="flex items-center gap-4">
+                  <div className="space-y-4">
                     <label className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
@@ -376,6 +380,11 @@ function App() {
                       />
                       Auto-start scanning when files are uploaded
                     </label>
+
+                    <div className="flex items-center gap-2 text-sm">
+                      <span>Theme:</span>
+                      <ThemeToggle variant="dropdown" />
+                    </div>
                   </div>
                 </div>
 

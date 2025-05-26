@@ -26,6 +26,7 @@ import { useSettings } from "./useSettings";
 export function usePersistedQueue() {
   const [isInitialized, setIsInitialized] = useState(false);
   const initializationRef = useRef(false);
+  const previousTaskIdsRef = useRef<string[]>([]);
 
   // Use focused hooks for different concerns
   const queueState = useQueueState();
@@ -48,6 +49,38 @@ export function usePersistedQueue() {
     processing.isProcessing,
     queueState.progress
   );
+
+  // Detect task changes and cleanup old background operations
+  useEffect(() => {
+    const currentTaskIds = queueState.tasks.map((task) => task.id);
+    const previousTaskIds = previousTaskIdsRef.current;
+
+    // Check for different scenarios that require cleanup
+    if (previousTaskIds.length > 0) {
+      if (currentTaskIds.length === 0) {
+        // Queue was cleared - cleanup all old tasks
+        console.log(
+          `🧹 Queue cleared: cleaning up ${previousTaskIds.length} old background operations`
+        );
+        processing.cleanupOldTasks(previousTaskIds);
+      } else if (currentTaskIds.length > 0) {
+        const hasAnyCommonTasks = previousTaskIds.some((id) =>
+          currentTaskIds.includes(id)
+        );
+
+        if (!hasAnyCommonTasks) {
+          // Complete replacement detected - cleanup all old tasks
+          console.log(
+            `🔄 Queue replacement detected: ${previousTaskIds.length} old tasks → ${currentTaskIds.length} new tasks`
+          );
+          processing.cleanupOldTasks(previousTaskIds);
+        }
+      }
+    }
+
+    // Update the reference for next comparison
+    previousTaskIdsRef.current = currentTaskIds;
+  }, [queueState.tasks, processing]);
 
   // Initialize persistence and handle auto-start logic (run only once)
   useEffect(() => {

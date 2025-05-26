@@ -89,6 +89,7 @@ export function HistoryView({
     entryId?: string;
     entryIds?: string[];
   } | null>(null);
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const pageSize = 50;
 
   // Process entries to show unique files only or all entries
@@ -344,6 +345,25 @@ export function HistoryView({
     setDeleteTarget(null);
   };
 
+  // Clear All handlers
+  const handleClearAll = () => {
+    setShowClearAllConfirm(true);
+  };
+
+  const confirmClearAll = async () => {
+    try {
+      await onClearHistory();
+    } catch (error) {
+      console.error("Failed to clear history:", error);
+    } finally {
+      setShowClearAllConfirm(false);
+    }
+  };
+
+  const cancelClearAll = () => {
+    setShowClearAllConfirm(false);
+  };
+
   // Download handlers
   const handleDownloadSelected = async () => {
     if (selectedEntries.size === 0) return;
@@ -520,6 +540,29 @@ export function HistoryView({
     }
   };
 
+  // Generate confirmation message for delete operations
+  const getDeleteConfirmationMessage = () => {
+    if (!deleteTarget) return "";
+
+    if (deleteTarget.type === "single") {
+      return "Are you sure you want to delete this history entry? This action cannot be undone.";
+    }
+
+    if (showUniqueOnly) {
+      if (deleteTarget.entryIds && deleteTarget.entryIds.length === 1) {
+        return "Are you sure you want to delete this history entry? This action cannot be undone.";
+      }
+      const uniqueCount = selectedEntries.size || 1;
+      const totalCount = deleteTarget.entryIds?.length || 0;
+      return `Are you sure you want to delete ${uniqueCount} unique ${
+        uniqueCount === 1 ? "file" : "files"
+      } and all their cached duplicates (${totalCount} total entries)? This action cannot be undone.`;
+    }
+
+    const entryCount = deleteTarget.entryIds?.length || 0;
+    return `Are you sure you want to delete ${entryCount} history entries? This action cannot be undone.`;
+  };
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -637,7 +680,7 @@ export function HistoryView({
           <Button
             variant="outline"
             size="sm"
-            onClick={onClearHistory}
+            onClick={handleClearAll}
             disabled={total === 0}
           >
             <Trash2 className="h-4 w-4 mr-2" />
@@ -1049,19 +1092,7 @@ export function HistoryView({
               </div>
 
               <p className="text-muted-foreground mb-6">
-                {deleteTarget.type === "single"
-                  ? "Are you sure you want to delete this history entry? This action cannot be undone."
-                  : showUniqueOnly
-                  ? deleteTarget.entryIds && deleteTarget.entryIds.length === 1
-                    ? "Are you sure you want to delete this history entry? This action cannot be undone."
-                    : `Are you sure you want to delete ${
-                        selectedEntries.size || 1
-                      } unique ${
-                        (selectedEntries.size || 1) === 1 ? "file" : "files"
-                      } and all their cached duplicates (${
-                        deleteTarget.entryIds?.length
-                      } total entries)? This action cannot be undone.`
-                  : `Are you sure you want to delete ${deleteTarget.entryIds?.length} history entries? This action cannot be undone.`}
+                {getDeleteConfirmationMessage()}
               </p>
 
               <div className="flex justify-end gap-3">
@@ -1069,6 +1100,54 @@ export function HistoryView({
                   Cancel
                 </Button>
                 <Button variant="destructive" onClick={confirmDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Clear All Confirmation Dialog */}
+      <AnimatePresence>
+        {showClearAllConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={cancelClearAll}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background rounded-lg p-6 max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center mb-4">
+                <Trash2 className="h-6 w-6 text-destructive mr-3" />
+                <h3 className="text-lg font-semibold">Confirm Delete</h3>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                {showUniqueOnly
+                  ? `Are you sure you want to delete ${
+                      processedEntries.length
+                    } unique ${
+                      processedEntries.length === 1 ? "file" : "files"
+                    } and all their cached duplicates (${total} total entries)? This action cannot be undone.`
+                  : `Are you sure you want to delete all ${total} history ${
+                      total === 1 ? "entry" : "entries"
+                    }? This action cannot be undone.`}
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={cancelClearAll}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={confirmClearAll}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>

@@ -19,6 +19,8 @@ A comprehensive React-based web application for secure file scanning and malware
   - Comprehensive scan history management with HistoryView
   - Queue management and task visualization with QueueSummary and TaskCard
   - Rate limit monitoring with ApiRateLimitIndicator
+  - Light/Dark/System theme switching with persistent preferences
+  - Confirmation dialogs for destructive actions to prevent accidental data loss
 
 - **Technical Features**
   - Full TypeScript implementation
@@ -101,6 +103,7 @@ src/
   - Badge: Status indicators
   - Button: Styled action buttons
   - Progress: Task progress visualization
+  - ThemeToggle: Light/Dark/System theme switching
 
 ### Core Services
 

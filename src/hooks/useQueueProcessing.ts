@@ -16,6 +16,7 @@ export interface QueueProcessingHook {
   isProcessing: boolean;
   startProcessing: () => void;
   stopProcessing: () => void;
+  cleanupOldTasks: (oldTaskIds: string[]) => void;
   rateLimiter: RateLimiter;
 }
 
@@ -67,8 +68,6 @@ export function useQueueProcessing(
     []
   );
   const getWaitTime = useCallback(() => rateLimiter.current.getWaitTime(), []);
-
-  // Removed concurrent processing - using sequential processing only
 
   // Initialize focused hooks
   const taskCompletion = useTaskCompletion(
@@ -125,6 +124,42 @@ export function useQueueProcessing(
     processingRef.current = false;
   }, []);
 
+  // Clean up background operations for old tasks
+  const cleanupOldTasks = useCallback(
+    (oldTaskIds: string[]) => {
+      console.log(
+        `🧹 Cleaning up ${oldTaskIds.length} old background operations`
+      );
+
+      // Stop polling for old tasks
+      oldTaskIds.forEach((taskId) => {
+        if (taskPolling.isPolling(taskId)) {
+          console.log(`  🛑 Stopping polling for old task: ${taskId}`);
+          taskPolling.stopPolling(taskId);
+        }
+      });
+
+      // Clear scan start times for old tasks
+      const scanTimes = getScanStartTimes();
+      oldTaskIds.forEach((taskId) => {
+        if (scanTimes.has(taskId)) {
+          console.log(`  ⏰ Clearing scan time for old task: ${taskId}`);
+          scanTimes.delete(taskId);
+        }
+      });
+
+      // Clear currently processing for old tasks
+      const currentlyProcessing = getCurrentlyProcessing();
+      oldTaskIds.forEach((taskId) => {
+        if (currentlyProcessing.has(taskId)) {
+          console.log(`  🔄 Removing old task from processing: ${taskId}`);
+          currentlyProcessing.delete(taskId);
+        }
+      });
+    },
+    [taskPolling, getScanStartTimes, getCurrentlyProcessing]
+  );
+
   // Start processing loop when enabled
   useEffect(() => {
     if (isProcessing && !processingLoop.isLoopRunning() && isInitialized) {
@@ -136,6 +171,7 @@ export function useQueueProcessing(
     isProcessing,
     startProcessing,
     stopProcessing,
+    cleanupOldTasks,
     rateLimiter: rateLimiter.current,
   };
 }
