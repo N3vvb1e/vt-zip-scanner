@@ -34,12 +34,17 @@ export interface HistoryRepositoryInterface {
     hasMore: boolean;
   }>;
   findExistingScan(sha256: string, size: number): Promise<HistoryEntry | null>;
+  deleteHistoryEntry(entryId: string): Promise<void>;
+  deleteHistoryEntries(entryIds: string[]): Promise<void>;
   clearHistory(): Promise<void>;
   cleanupOldHistory(retentionDays: number): Promise<number>;
   cleanupInvalidHistoryEntries(): Promise<number>;
 }
 
-export class HistoryRepository extends BaseRepository implements HistoryRepositoryInterface {
+export class HistoryRepository
+  extends BaseRepository
+  implements HistoryRepositoryInterface
+{
   /**
    * Add completed task to history
    */
@@ -91,14 +96,15 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
           createdAt: task.createdAt,
           updatedAt: task.updatedAt,
           completedAt: new Date(),
-          zipFileName: (task as ScanTask & { zipFileName?: string }).zipFileName,
+          zipFileName: (task as ScanTask & { zipFileName?: string })
+            .zipFileName,
         };
 
         console.log(
           `💾 Saving to history: ${task.file.name} (${
             task.status
-          }) - has report: ${!!task.report}, has file_info: ${!!task.report?.meta
-            ?.file_info}`
+          }) - has report: ${!!task.report}, has file_info: ${!!task.report
+            ?.meta?.file_info}`
         );
 
         // Debug: Log the actual report structure
@@ -136,49 +142,55 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
     total: number;
     hasMore: boolean;
   }> {
-    return this.withReadTransaction([DB_CONFIG.STORES.HISTORY], async (transaction) => {
-      const store = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
+    return this.withReadTransaction(
+      [DB_CONFIG.STORES.HISTORY],
+      async (transaction) => {
+        const store = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
 
-      let entries: HistoryEntry[] = [];
+        let entries: HistoryEntry[] = [];
 
-      // Use index if searching by status
-      if (options.status) {
-        const index = store.index("status");
-        const range = IDBKeyRange.only(options.status);
-        entries = await this.getAllFromIndex<HistoryEntry>(index, range);
-      } else {
-        entries = await this.getAllFromStore<HistoryEntry>(store);
+        // Use index if searching by status
+        if (options.status) {
+          const index = store.index("status");
+          const range = IDBKeyRange.only(options.status);
+          entries = await this.getAllFromIndex<HistoryEntry>(index, range);
+        } else {
+          entries = await this.getAllFromStore<HistoryEntry>(store);
+        }
+
+        // Apply filters
+        entries = this.applyFilters(entries, options);
+
+        // Sort by completed date (newest first)
+        entries.sort((a, b) => {
+          const dateA = new Date(a.completedAt || a.createdAt).getTime();
+          const dateB = new Date(b.completedAt || b.createdAt).getTime();
+          return dateB - dateA;
+        });
+
+        // Apply pagination
+        const total = entries.length;
+        const offset = options.offset || 0;
+        const limit = options.limit || 50;
+
+        entries = entries.slice(offset, offset + limit);
+
+        return {
+          entries,
+          total,
+          hasMore: offset + limit < total,
+        };
       }
-
-      // Apply filters
-      entries = this.applyFilters(entries, options);
-
-      // Sort by completed date (newest first)
-      entries.sort((a, b) => {
-        const dateA = new Date(a.completedAt || a.createdAt).getTime();
-        const dateB = new Date(b.completedAt || b.createdAt).getTime();
-        return dateB - dateA;
-      });
-
-      // Apply pagination
-      const total = entries.length;
-      const offset = options.offset || 0;
-      const limit = options.limit || 50;
-
-      entries = entries.slice(offset, offset + limit);
-
-      return {
-        entries,
-        total,
-        hasMore: offset + limit < total,
-      };
-    });
+    );
   }
 
   /**
    * Apply search filters to entries
    */
-  private applyFilters(entries: HistoryEntry[], options: SearchOptions): HistoryEntry[] {
+  private applyFilters(
+    entries: HistoryEntry[],
+    options: SearchOptions
+  ): HistoryEntry[] {
     return entries.filter((entry) => {
       // Text search
       if (options.query) {
@@ -222,51 +234,147 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
   /**
    * Find existing scan result by file hash
    */
-  async findExistingScan(sha256: string, size: number): Promise<HistoryEntry | null> {
-    return this.withReadTransaction([DB_CONFIG.STORES.HISTORY], async (transaction) => {
-      const store = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
+  async findExistingScan(
+    sha256: string,
+    size: number
+  ): Promise<HistoryEntry | null> {
+    return this.withReadTransaction(
+      [DB_CONFIG.STORES.HISTORY],
+      async (transaction) => {
+        const store = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
 
-      try {
-        const allEntries = await this.getAllFromStore<HistoryEntry>(store);
-        console.log(
-          `🔍 Searching ${
-            allEntries.length
-          } history entries for SHA256: ${sha256.substring(
-            0,
-            16
-          )}... (size: ${size})`
-        );
+        try {
+          const allEntries = await this.getAllFromStore<HistoryEntry>(store);
+          console.log(
+            `🔍 Searching ${
+              allEntries.length
+            } history entries for SHA256: ${sha256.substring(
+              0,
+              16
+            )}... (size: ${size})`
+          );
 
-        // Find entry with matching SHA-256 hash and size
-        const matchingEntry = allEntries.find((entry) => {
-          const statusMatch =
-            entry.status === "completed" || entry.status === "reused";
+          // Find entry with matching SHA-256 hash and size
+          const matchingEntry = allEntries.find((entry) => {
+            const statusMatch =
+              entry.status === "completed" || entry.status === "reused";
 
-          if (!statusMatch || !entry.report?.meta?.file_info) {
-            return false;
+            if (!statusMatch || !entry.report?.meta?.file_info) {
+              return false;
+            }
+
+            const fileInfo = entry.report.meta.file_info;
+            const hashMatch = fileInfo.sha256 === sha256;
+            const sizeMatch = fileInfo.size === size;
+
+            return hashMatch && sizeMatch;
+          });
+
+          if (matchingEntry) {
+            console.log(
+              `  ✅ Found matching entry: ${matchingEntry.id} (${matchingEntry.fileName})`
+            );
+          } else {
+            console.log(`  ❌ No matching entry found`);
           }
 
-          const fileInfo = entry.report.meta.file_info;
-          const hashMatch = fileInfo.sha256 === sha256;
-          const sizeMatch = fileInfo.size === size;
+          return matchingEntry || null;
+        } catch (error) {
+          console.error("Error finding existing scan:", error);
+          return null;
+        }
+      }
+    );
+  }
 
-          return hashMatch && sizeMatch;
-        });
+  /**
+   * Delete a single history entry
+   */
+  async deleteHistoryEntry(entryId: string): Promise<void> {
+    await this.withWriteTransaction(
+      [DB_CONFIG.STORES.HISTORY, DB_CONFIG.STORES.FILES],
+      async (transaction) => {
+        const historyStore = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
+        const filesStore = transaction.objectStore(DB_CONFIG.STORES.FILES);
 
-        if (matchingEntry) {
-          console.log(
-            `  ✅ Found matching entry: ${matchingEntry.id} (${matchingEntry.fileName})`
-          );
-        } else {
-          console.log(`  ❌ No matching entry found`);
+        // Get the entry to find its file ID
+        const entry = await this.getRecord<HistoryEntry>(historyStore, entryId);
+        if (!entry) {
+          console.warn(`History entry ${entryId} not found`);
+          return;
         }
 
-        return matchingEntry || null;
-      } catch (error) {
-        console.error("Error finding existing scan:", error);
-        return null;
+        // Delete the history entry
+        await this.deleteRecord(historyStore, entryId);
+
+        // Check if the file is still referenced by other entries
+        const remainingEntries = await this.getAllFromStore<HistoryEntry>(
+          historyStore
+        );
+        const isFileStillReferenced = remainingEntries.some(
+          (e) => e.fileId === entry.fileId
+        );
+
+        // Delete the file if no longer referenced
+        if (!isFileStillReferenced) {
+          await this.deleteRecord(filesStore, entry.fileId);
+        }
+
+        console.log(`🗑️ Deleted history entry: ${entry.fileName}`);
       }
-    });
+    );
+  }
+
+  /**
+   * Delete multiple history entries
+   */
+  async deleteHistoryEntries(entryIds: string[]): Promise<void> {
+    if (entryIds.length === 0) return;
+
+    await this.withWriteTransaction(
+      [DB_CONFIG.STORES.HISTORY, DB_CONFIG.STORES.FILES],
+      async (transaction) => {
+        const historyStore = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
+        const filesStore = transaction.objectStore(DB_CONFIG.STORES.FILES);
+
+        // Get all entries to find their file IDs
+        const entriesToDelete: HistoryEntry[] = [];
+        const fileIdsToCheck = new Set<string>();
+
+        for (const entryId of entryIds) {
+          const entry = await this.getRecord<HistoryEntry>(
+            historyStore,
+            entryId
+          );
+          if (entry) {
+            entriesToDelete.push(entry);
+            fileIdsToCheck.add(entry.fileId);
+          }
+        }
+
+        // Delete all history entries
+        for (const entry of entriesToDelete) {
+          await this.deleteRecord(historyStore, entry.id);
+        }
+
+        // Check which files are still referenced
+        const remainingEntries = await this.getAllFromStore<HistoryEntry>(
+          historyStore
+        );
+        const referencedFileIds = new Set(
+          remainingEntries.map((e) => e.fileId)
+        );
+
+        // Delete unreferenced files
+        for (const fileId of fileIdsToCheck) {
+          if (!referencedFileIds.has(fileId)) {
+            await this.deleteRecord(filesStore, fileId);
+          }
+        }
+
+        console.log(`🗑️ Deleted ${entriesToDelete.length} history entries`);
+      }
+    );
   }
 
   /**
@@ -274,10 +382,16 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
    */
   async clearHistory(): Promise<void> {
     await this.withWriteTransaction(
-      [DB_CONFIG.STORES.HISTORY, DB_CONFIG.STORES.FILES, DB_CONFIG.STORES.QUEUE],
+      [
+        DB_CONFIG.STORES.HISTORY,
+        DB_CONFIG.STORES.FILES,
+        DB_CONFIG.STORES.QUEUE,
+      ],
       async (transaction) => {
         // Clear history entries
-        await this.clearStore(transaction.objectStore(DB_CONFIG.STORES.HISTORY));
+        await this.clearStore(
+          transaction.objectStore(DB_CONFIG.STORES.HISTORY)
+        );
 
         // Clear all file blobs (both from history and queue)
         await this.clearStore(transaction.objectStore(DB_CONFIG.STORES.FILES));
@@ -304,7 +418,9 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
         cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
         // Get old entries
-        const allEntries = await this.getAllFromStore<HistoryEntry>(historyStore);
+        const allEntries = await this.getAllFromStore<HistoryEntry>(
+          historyStore
+        );
         const entriesToDelete = allEntries.filter(
           (entry) => new Date(entry.completedAt || entry.createdAt) < cutoffDate
         );
@@ -317,8 +433,12 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
         }
 
         // Check if files are still referenced
-        const remainingEntries = await this.getAllFromStore<HistoryEntry>(historyStore);
-        const referencedFileIds = new Set(remainingEntries.map((e) => e.fileId));
+        const remainingEntries = await this.getAllFromStore<HistoryEntry>(
+          historyStore
+        );
+        const referencedFileIds = new Set(
+          remainingEntries.map((e) => e.fileId)
+        );
 
         // Delete unreferenced files
         for (const fileId of fileIdsToCheck) {
@@ -337,30 +457,33 @@ export class HistoryRepository extends BaseRepository implements HistoryReposito
    * Clean up history entries that don't have proper file_info for duplicate detection
    */
   async cleanupInvalidHistoryEntries(): Promise<number> {
-    return this.withWriteTransaction([DB_CONFIG.STORES.HISTORY], async (transaction) => {
-      const store = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
+    return this.withWriteTransaction(
+      [DB_CONFIG.STORES.HISTORY],
+      async (transaction) => {
+        const store = transaction.objectStore(DB_CONFIG.STORES.HISTORY);
 
-      try {
-        const allEntries = await this.getAllFromStore<HistoryEntry>(store);
+        try {
+          const allEntries = await this.getAllFromStore<HistoryEntry>(store);
 
-        // Find entries without proper file_info
-        const invalidEntries = allEntries.filter(
-          (entry) =>
-            !entry.report?.meta?.file_info ||
-            !entry.report.meta.file_info.sha256 ||
-            !entry.report.meta.file_info.size
-        );
+          // Find entries without proper file_info
+          const invalidEntries = allEntries.filter(
+            (entry) =>
+              !entry.report?.meta?.file_info ||
+              !entry.report.meta.file_info.sha256 ||
+              !entry.report.meta.file_info.size
+          );
 
-        // Delete invalid entries
-        for (const entry of invalidEntries) {
-          await this.deleteRecord(store, entry.id);
+          // Delete invalid entries
+          for (const entry of invalidEntries) {
+            await this.deleteRecord(store, entry.id);
+          }
+
+          return invalidEntries.length;
+        } catch (error) {
+          console.error("Error cleaning up invalid history entries:", error);
+          return 0;
         }
-
-        return invalidEntries.length;
-      } catch (error) {
-        console.error("Error cleaning up invalid history entries:", error);
-        return 0;
       }
-    });
+    );
   }
 }

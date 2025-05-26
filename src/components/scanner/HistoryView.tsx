@@ -13,6 +13,8 @@ import {
   ChevronUp,
   Database,
   HardDrive,
+  Square,
+  CheckSquare,
 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
@@ -27,8 +29,11 @@ interface HistoryViewProps {
   total: number;
   loading: boolean;
   onLoadHistory: (options: SearchOptions) => Promise<void>;
+  onDeleteHistoryEntry: (entryId: string) => Promise<void>;
+  onDeleteHistoryEntries: (entryIds: string[]) => Promise<void>;
   onClearHistory: () => Promise<void>;
   onDownloadFile: (fileId: string, fileName: string) => Promise<void>;
+  onDownloadSelectedFiles: (entryIds: string[]) => Promise<void>;
   storageStats?: {
     historyCount: number;
     filesCount: number;
@@ -54,8 +59,11 @@ export function HistoryView({
   total,
   loading,
   onLoadHistory,
+  onDeleteHistoryEntry,
+  onDeleteHistoryEntries,
   onClearHistory,
   onDownloadFile,
+  onDownloadSelectedFiles,
   storageStats,
 }: HistoryViewProps) {
   const [filters, setFilters] = useState<HistoryFilters>({
@@ -71,6 +79,16 @@ export function HistoryView({
   const [showFilters, setShowFilters] = useState(false);
   const [showUniqueOnly, setShowUniqueOnly] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
+  const [selectedEntries, setSelectedEntries] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "single" | "multiple";
+    entryId?: string;
+    entryIds?: string[];
+  } | null>(null);
   const pageSize = 50;
 
   // Process entries to show unique files only or all entries
@@ -228,6 +246,240 @@ export function HistoryView({
     }
   };
 
+  // Selection handlers
+  const toggleSelection = (entryId: string) => {
+    setSelectedEntries((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAll = () => {
+    const allIds = processedEntries.map((entry) => entry.id);
+    setSelectedEntries(new Set(allIds));
+  };
+
+  const clearSelection = () => {
+    setSelectedEntries(new Set());
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    if (selectionMode) {
+      clearSelection();
+    }
+  };
+
+  // Delete handlers
+  const handleDeleteSingle = (entryId: string) => {
+    if (showUniqueOnly) {
+      // In unique files mode, find the unique entry and delete all its duplicates
+      const uniqueEntry = processedEntries.find(
+        (entry) => entry.id === entryId
+      ) as UniqueFileEntry;
+      if (uniqueEntry && uniqueEntry.allEntries) {
+        const allEntryIds = uniqueEntry.allEntries.map((entry) => entry.id);
+        // If there's only one entry (no duplicates), treat it as a single delete
+        if (allEntryIds.length === 1) {
+          setDeleteTarget({ type: "single", entryId });
+        } else {
+          setDeleteTarget({ type: "multiple", entryIds: allEntryIds });
+        }
+      } else {
+        setDeleteTarget({ type: "single", entryId });
+      }
+    } else {
+      setDeleteTarget({ type: "single", entryId });
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteSelected = () => {
+    if (showUniqueOnly) {
+      // In unique files mode, collect all duplicate entries for selected unique files
+      const allEntryIds: string[] = [];
+      selectedEntries.forEach((selectedId) => {
+        const uniqueEntry = processedEntries.find(
+          (entry) => entry.id === selectedId
+        ) as UniqueFileEntry;
+        if (uniqueEntry && uniqueEntry.allEntries) {
+          allEntryIds.push(...uniqueEntry.allEntries.map((entry) => entry.id));
+        } else {
+          allEntryIds.push(selectedId);
+        }
+      });
+      setDeleteTarget({ type: "multiple", entryIds: allEntryIds });
+    } else {
+      const entryIds = Array.from(selectedEntries);
+      setDeleteTarget({ type: "multiple", entryIds });
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      if (deleteTarget.type === "single" && deleteTarget.entryId) {
+        await onDeleteHistoryEntry(deleteTarget.entryId);
+      } else if (deleteTarget.type === "multiple" && deleteTarget.entryIds) {
+        await onDeleteHistoryEntries(deleteTarget.entryIds);
+        clearSelection();
+      }
+    } catch (error) {
+      console.error("Failed to delete entries:", error);
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setDeleteTarget(null);
+  };
+
+  // Download handlers
+  const handleDownloadSelected = async () => {
+    if (selectedEntries.size === 0) return;
+
+    try {
+      if (showUniqueOnly) {
+        // In unique files mode, download only one instance per unique file
+        const entryIds: string[] = [];
+        selectedEntries.forEach((selectedId) => {
+          const uniqueEntry = processedEntries.find(
+            (entry) => entry.id === selectedId
+          ) as UniqueFileEntry;
+          if (uniqueEntry && uniqueEntry.allEntries) {
+            // Find the first safe entry from all duplicates
+            const safeEntry = uniqueEntry.allEntries.find((entry) => {
+              const isClean =
+                (entry.status === "completed" || entry.status === "reused") &&
+                (!entry.report?.stats.malicious ||
+                  entry.report.stats.malicious === 0);
+              return isClean;
+            });
+            if (safeEntry) {
+              entryIds.push(safeEntry.id);
+            }
+          } else {
+            // Check if the single entry is safe
+            const isClean =
+              (uniqueEntry.status === "completed" ||
+                uniqueEntry.status === "reused") &&
+              (!uniqueEntry.report?.stats.malicious ||
+                uniqueEntry.report.stats.malicious === 0);
+            if (isClean) {
+              entryIds.push(selectedId);
+            }
+          }
+        });
+        await onDownloadSelectedFiles(entryIds);
+      } else {
+        // In all scans mode, filter for safe files only
+        const safeEntryIds = Array.from(selectedEntries).filter((entryId) => {
+          const entry = processedEntries.find((e) => e.id === entryId);
+          if (!entry) return false;
+          const isClean =
+            (entry.status === "completed" || entry.status === "reused") &&
+            (!entry.report?.stats.malicious ||
+              entry.report.stats.malicious === 0);
+          return isClean;
+        });
+        await onDownloadSelectedFiles(safeEntryIds);
+      }
+    } catch (error) {
+      console.error("Failed to download selected files:", error);
+    }
+  };
+
+  // Get count of safe files in selection
+  const getSafeFileCount = () => {
+    if (showUniqueOnly) {
+      let safeCount = 0;
+      selectedEntries.forEach((selectedId) => {
+        const uniqueEntry = processedEntries.find(
+          (entry) => entry.id === selectedId
+        ) as UniqueFileEntry;
+        if (uniqueEntry && uniqueEntry.allEntries) {
+          // Check if there's at least one safe entry among duplicates
+          const hasSafeEntry = uniqueEntry.allEntries.some((entry) => {
+            const isClean =
+              (entry.status === "completed" || entry.status === "reused") &&
+              (!entry.report?.stats.malicious ||
+                entry.report.stats.malicious === 0);
+            return isClean;
+          });
+          if (hasSafeEntry) {
+            safeCount += 1; // Count only one file per unique selection
+          }
+        } else {
+          const isClean =
+            (uniqueEntry.status === "completed" ||
+              uniqueEntry.status === "reused") &&
+            (!uniqueEntry.report?.stats.malicious ||
+              uniqueEntry.report.stats.malicious === 0);
+          if (isClean) {
+            safeCount += 1;
+          }
+        }
+      });
+      return safeCount;
+    } else {
+      return Array.from(selectedEntries).filter((entryId) => {
+        const entry = processedEntries.find((e) => e.id === entryId);
+        if (!entry) return false;
+        const isClean =
+          (entry.status === "completed" || entry.status === "reused") &&
+          (!entry.report?.stats.malicious ||
+            entry.report.stats.malicious === 0);
+        return isClean;
+      }).length;
+    }
+  };
+
+  // Check if selection contains any malicious files
+  const hasMaliciousFilesInSelection = () => {
+    if (showUniqueOnly) {
+      return Array.from(selectedEntries).some((selectedId) => {
+        const uniqueEntry = processedEntries.find(
+          (entry) => entry.id === selectedId
+        ) as UniqueFileEntry;
+        if (uniqueEntry && uniqueEntry.allEntries) {
+          // Check if any entry among duplicates is malicious
+          return uniqueEntry.allEntries.some((entry) => {
+            const isMalicious =
+              entry.status === "error" ||
+              (entry.report?.stats.malicious &&
+                entry.report.stats.malicious > 0);
+            return isMalicious;
+          });
+        } else {
+          const isMalicious =
+            uniqueEntry.status === "error" ||
+            (uniqueEntry.report?.stats.malicious &&
+              uniqueEntry.report.stats.malicious > 0);
+          return isMalicious;
+        }
+      });
+    } else {
+      return Array.from(selectedEntries).some((entryId) => {
+        const entry = processedEntries.find((e) => e.id === entryId);
+        if (!entry) return false;
+        const isMalicious =
+          entry.status === "error" ||
+          (entry.report?.stats.malicious && entry.report.stats.malicious > 0);
+        return isMalicious;
+      });
+    }
+  };
+
   const getStatusBadge = (entry: HistoryEntry) => {
     if (entry.status === "error") {
       return <Badge variant="destructive">Error</Badge>;
@@ -310,6 +562,8 @@ export function HistoryView({
             onClick={() => {
               setShowUniqueOnly(!showUniqueOnly);
               setCurrentPage(0); // Reset to first page when switching modes
+              clearSelection(); // Clear selection when switching modes since entry IDs change
+              setSelectionMode(false); // Exit selection mode when switching
             }}
           >
             {showUniqueOnly ? "Unique Files" : "All Scans"}
@@ -330,13 +584,64 @@ export function HistoryView({
           </Button>
 
           <Button
+            variant={selectionMode ? "default" : "ghost"}
+            size="sm"
+            onClick={toggleSelectionMode}
+            disabled={processedEntries.length === 0}
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            {selectionMode ? "Cancel" : "Select"}
+          </Button>
+
+          {selectionMode && selectedEntries.size > 0 && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadSelected}
+                disabled={
+                  getSafeFileCount() === 0 || hasMaliciousFilesInSelection()
+                }
+                title={
+                  getSafeFileCount() === 0
+                    ? "No safe files selected for download"
+                    : hasMaliciousFilesInSelection()
+                    ? "Cannot download when malicious files are selected"
+                    : showUniqueOnly
+                    ? `Download ${getSafeFileCount()} unique safe ${
+                        getSafeFileCount() === 1 ? "file" : "files"
+                      }`
+                    : `Download ${getSafeFileCount()} safe files`
+                }
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download ({getSafeFileCount()})
+              </Button>
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSelected}
+                title={
+                  showUniqueOnly
+                    ? `Delete ${selectedEntries.size} unique files and all their cached duplicates`
+                    : `Delete ${selectedEntries.size} entries`
+                }
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete ({selectedEntries.size})
+              </Button>
+            </>
+          )}
+
+          <Button
             variant="outline"
             size="sm"
             onClick={onClearHistory}
             disabled={total === 0}
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            Clear History
+            Clear All
           </Button>
         </div>
       </div>
@@ -421,6 +726,44 @@ export function HistoryView({
         )}
       </AnimatePresence>
 
+      {/* Selection Bar */}
+      <AnimatePresence>
+        {selectionMode && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden mb-4"
+          >
+            <div className="bg-muted/50 rounded-lg p-3 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={selectAll}
+                  disabled={selectedEntries.size === processedEntries.length}
+                >
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Select All
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearSelection}
+                  disabled={selectedEntries.size === 0}
+                >
+                  <Square className="h-4 w-4 mr-2" />
+                  Clear Selection
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {selectedEntries.size} of {processedEntries.length} selected
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* History Entries */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
@@ -460,6 +803,22 @@ export function HistoryView({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
+                        {selectionMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleSelection(entry.id);
+                            }}
+                            className="p-1 hover:bg-muted rounded"
+                          >
+                            {selectedEntries.has(entry.id) ? (
+                              <CheckSquare className="h-5 w-5 text-primary" />
+                            ) : (
+                              <Square className="h-5 w-5 text-muted-foreground" />
+                            )}
+                          </button>
+                        )}
+
                         <div className="p-2 bg-muted rounded-md">
                           {isClean ? (
                             <Shield className="h-5 w-5 text-green-500" />
@@ -516,6 +875,29 @@ export function HistoryView({
                             }}
                           >
                             <Download className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {!selectionMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSingle(entry.id);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                            title={
+                              showUniqueOnly && uniqueEntry.duplicateCount > 1
+                                ? `Delete this file and ${
+                                    uniqueEntry.duplicateCount - 1
+                                  } cached duplicate${
+                                    uniqueEntry.duplicateCount > 2 ? "s" : ""
+                                  }`
+                                : "Delete this entry"
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
 
@@ -643,6 +1025,58 @@ export function HistoryView({
           </Button>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {showDeleteConfirm && deleteTarget && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={cancelDelete}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background rounded-lg p-6 max-w-md w-full mx-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center mb-4">
+                <Trash2 className="h-6 w-6 text-destructive mr-3" />
+                <h3 className="text-lg font-semibold">Confirm Delete</h3>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                {deleteTarget.type === "single"
+                  ? "Are you sure you want to delete this history entry? This action cannot be undone."
+                  : showUniqueOnly
+                  ? deleteTarget.entryIds && deleteTarget.entryIds.length === 1
+                    ? "Are you sure you want to delete this history entry? This action cannot be undone."
+                    : `Are you sure you want to delete ${
+                        selectedEntries.size || 1
+                      } unique ${
+                        (selectedEntries.size || 1) === 1 ? "file" : "files"
+                      } and all their cached duplicates (${
+                        deleteTarget.entryIds?.length
+                      } total entries)? This action cannot be undone.`
+                  : `Are you sure you want to delete ${deleteTarget.entryIds?.length} history entries? This action cannot be undone.`}
+              </p>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={cancelDelete}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={confirmDelete}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import type { FileEntry, ScanTask } from "./types";
 import { createSafeZip } from "./utils/secureZipUtils";
 import { validateApiKey } from "./services/virusTotalService";
+import { generateId } from "./utils/common";
 
 function App() {
   const [apiKeyValid, setApiKeyValid] = useState<boolean | null>(null);
@@ -35,6 +36,8 @@ function App() {
     historyTotal,
     historyLoading,
     loadHistory,
+    deleteHistoryEntry,
+    deleteHistoryEntries,
     clearHistory,
     getHistoryFile,
     getStorageStats,
@@ -167,6 +170,80 @@ function App() {
       URL.revokeObjectURL(url);
     },
     [getHistoryFile]
+  );
+
+  // Add bulk history download handler
+  const handleHistoryBulkDownload = useCallback(
+    async (entryIds: string[]) => {
+      if (entryIds.length === 0) return;
+
+      try {
+        // Get all the files for the selected entries
+        const fileEntries: { fileName: string; blob: Blob }[] = [];
+
+        for (const entryId of entryIds) {
+          const entry = historyEntries.find((e) => e.id === entryId);
+          if (!entry) continue;
+
+          const blob = await getHistoryFile(entry.fileId);
+          if (blob) {
+            fileEntries.push({
+              fileName: entry.fileName,
+              blob: blob,
+            });
+          }
+        }
+
+        if (fileEntries.length === 0) {
+          alert("No files found for download");
+          return;
+        }
+
+        if (fileEntries.length === 1) {
+          // Single file - download directly
+          const { fileName, blob } = fileEntries[0];
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } else {
+          // Multiple files - create ZIP
+          const { createSafeZip } = await import("./utils/secureZipUtils");
+
+          // Convert to FileEntry format for createSafeZip
+          const files = fileEntries.map(({ fileName, blob }) => ({
+            id: generateId(),
+            name: fileName,
+            path: fileName,
+            size: blob.size,
+            type: blob.type || "application/octet-stream",
+            blob: blob,
+          }));
+
+          const safeZip = await createSafeZip(files);
+
+          // Trigger download
+          const url = URL.createObjectURL(safeZip);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `safe_files_${
+            new Date().toISOString().split("T")[0]
+          }.zip`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error("Error downloading selected files:", error);
+        alert("Failed to download selected files");
+      }
+    },
+    [historyEntries, getHistoryFile]
   );
 
   // Toggle auto-start setting
@@ -366,8 +443,11 @@ function App() {
               total={historyTotal}
               loading={historyLoading}
               onLoadHistory={loadHistory}
+              onDeleteHistoryEntry={deleteHistoryEntry}
+              onDeleteHistoryEntries={deleteHistoryEntries}
               onClearHistory={clearHistory}
               onDownloadFile={handleHistoryDownload}
+              onDownloadSelectedFiles={handleHistoryBulkDownload}
               storageStats={storageStats}
             />
           </div>

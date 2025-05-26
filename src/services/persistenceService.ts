@@ -74,6 +74,14 @@ export class PersistenceService {
     return this.service.findExistingScan(sha256, size);
   }
 
+  async deleteHistoryEntry(entryId: string): Promise<void> {
+    return this.service.deleteHistoryEntry(entryId);
+  }
+
+  async deleteHistoryEntries(entryIds: string[]): Promise<void> {
+    return this.service.deleteHistoryEntries(entryIds);
+  }
+
   async clearHistory(): Promise<void> {
     return this.service.clearHistory();
   }

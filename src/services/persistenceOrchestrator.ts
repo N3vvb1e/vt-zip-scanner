@@ -5,10 +5,25 @@
 
 import type { ScanTask } from "../types";
 import { databaseManager } from "./database/databaseManager";
-import { QueueRepository, type QueueRepositoryInterface } from "./repositories/queueRepository";
-import { HistoryRepository, type HistoryRepositoryInterface, type HistoryEntry, type SearchOptions } from "./repositories/historyRepository";
-import { SettingsRepository, type SettingsRepositoryInterface, type Settings } from "./repositories/settingsRepository";
-import { FileRepository, type FileRepositoryInterface } from "./repositories/fileRepository";
+import {
+  QueueRepository,
+  type QueueRepositoryInterface,
+} from "./repositories/queueRepository";
+import {
+  HistoryRepository,
+  type HistoryRepositoryInterface,
+  type HistoryEntry,
+  type SearchOptions,
+} from "./repositories/historyRepository";
+import {
+  SettingsRepository,
+  type SettingsRepositoryInterface,
+  type Settings,
+} from "./repositories/settingsRepository";
+import {
+  FileRepository,
+  type FileRepositoryInterface,
+} from "./repositories/fileRepository";
 
 export interface PersistenceOrchestratorInterface {
   // Initialization
@@ -27,6 +42,8 @@ export interface PersistenceOrchestratorInterface {
     hasMore: boolean;
   }>;
   findExistingScan(sha256: string, size: number): Promise<HistoryEntry | null>;
+  deleteHistoryEntry(entryId: string): Promise<void>;
+  deleteHistoryEntries(entryIds: string[]): Promise<void>;
   clearHistory(): Promise<void>;
 
   // File operations
@@ -56,7 +73,9 @@ export interface PersistenceOrchestratorInterface {
 /**
  * Persistence orchestrator that coordinates all database operations
  */
-export class PersistenceOrchestrator implements PersistenceOrchestratorInterface {
+export class PersistenceOrchestrator
+  implements PersistenceOrchestratorInterface
+{
   private queueRepo: QueueRepositoryInterface;
   private historyRepo: HistoryRepositoryInterface;
   private settingsRepo: SettingsRepositoryInterface;
@@ -99,7 +118,7 @@ export class PersistenceOrchestrator implements PersistenceOrchestratorInterface
 
   async addToHistory(task: ScanTask): Promise<void> {
     await this.historyRepo.addToHistory(task);
-    
+
     // Run cleanup if needed
     await this.cleanupOldHistoryIfNeeded();
   }
@@ -112,8 +131,19 @@ export class PersistenceOrchestrator implements PersistenceOrchestratorInterface
     return this.historyRepo.getHistory(options);
   }
 
-  async findExistingScan(sha256: string, size: number): Promise<HistoryEntry | null> {
+  async findExistingScan(
+    sha256: string,
+    size: number
+  ): Promise<HistoryEntry | null> {
     return this.historyRepo.findExistingScan(sha256, size);
+  }
+
+  async deleteHistoryEntry(entryId: string): Promise<void> {
+    return this.historyRepo.deleteHistoryEntry(entryId);
+  }
+
+  async deleteHistoryEntries(entryIds: string[]): Promise<void> {
+    return this.historyRepo.deleteHistoryEntries(entryIds);
   }
 
   async clearHistory(): Promise<void> {
@@ -201,11 +231,13 @@ export class PersistenceOrchestrator implements PersistenceOrchestratorInterface
       return;
     }
 
-    const deletedCount = await this.historyRepo.cleanupOldHistory(settings.historyRetentionDays);
-    
+    const deletedCount = await this.historyRepo.cleanupOldHistory(
+      settings.historyRetentionDays
+    );
+
     // Update last cleanup date
     await this.updateSettings({ lastCleanup: now });
-    
+
     if (deletedCount > 0) {
       console.log(`Cleaned up ${deletedCount} old history entries`);
     }

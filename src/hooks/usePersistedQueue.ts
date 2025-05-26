@@ -131,6 +131,8 @@ export function usePersistedQueue() {
     historyTotal: historyManager.historyTotal,
     historyLoading: historyManager.historyLoading,
     loadHistory: historyManager.loadHistory,
+    deleteHistoryEntry: historyManager.deleteHistoryEntry,
+    deleteHistoryEntries: historyManager.deleteHistoryEntries,
     clearHistory: historyManager.clearHistory,
     getHistoryFile: historyManager.getHistoryFile,
 

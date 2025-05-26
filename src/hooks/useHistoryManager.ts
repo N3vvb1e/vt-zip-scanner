@@ -17,6 +17,8 @@ export interface HistoryManagerHook {
   historyTotal: number;
   historyLoading: boolean;
   loadHistory: (options?: SearchOptions) => Promise<void>;
+  deleteHistoryEntry: (entryId: string) => Promise<void>;
+  deleteHistoryEntries: (entryIds: string[]) => Promise<void>;
   clearHistory: () => Promise<void>;
   getHistoryFile: (fileId: string) => Promise<Blob | null>;
   addToHistory: (task: ScanTask) => Promise<void>;
@@ -65,6 +67,31 @@ export function useHistoryManager(): HistoryManagerHook {
     }
   }, []);
 
+  const deleteHistoryEntry = useCallback(async (entryId: string) => {
+    try {
+      await persistenceService.deleteHistoryEntry(entryId);
+      // Remove the entry from local state
+      setHistoryEntries((prev) => prev.filter((entry) => entry.id !== entryId));
+      setHistoryTotal((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to delete history entry:", error);
+    }
+  }, []);
+
+  const deleteHistoryEntries = useCallback(async (entryIds: string[]) => {
+    try {
+      await persistenceService.deleteHistoryEntries(entryIds);
+      // Remove the entries from local state
+      const entryIdSet = new Set(entryIds);
+      setHistoryEntries((prev) =>
+        prev.filter((entry) => !entryIdSet.has(entry.id))
+      );
+      setHistoryTotal((prev) => Math.max(0, prev - entryIds.length));
+    } catch (error) {
+      console.error("Failed to delete history entries:", error);
+    }
+  }, []);
+
   const clearHistory = useCallback(async () => {
     try {
       await persistenceService.clearHistory();
@@ -101,6 +128,8 @@ export function useHistoryManager(): HistoryManagerHook {
     historyTotal,
     historyLoading,
     loadHistory,
+    deleteHistoryEntry,
+    deleteHistoryEntries,
     clearHistory,
     getHistoryFile,
     addToHistory,
