@@ -1,7 +1,6 @@
-import React from "react";
 import { Moon, Sun, Monitor } from "lucide-react";
 import { Button } from "./Button";
-import { useTheme } from "../../contexts/ThemeContext";
+import { useTheme } from "../../hooks/useTheme";
 import { cn } from "../../utils/cn";
 
 interface ThemeToggleProps {
@@ -9,12 +8,20 @@ interface ThemeToggleProps {
   className?: string;
 }
 
-export function ThemeToggle({ variant = "button", className }: ThemeToggleProps) {
+export function ThemeToggle({
+  variant = "button",
+  className,
+}: ThemeToggleProps) {
   const { theme, actualTheme, setTheme } = useTheme();
 
   if (variant === "dropdown") {
     return (
-      <div className={cn("flex items-center space-x-1 p-1 bg-muted rounded-lg", className)}>
+      <div
+        className={cn(
+          "flex items-center space-x-1 p-1 bg-muted rounded-lg",
+          className
+        )}
+      >
         <Button
           variant={theme === "light" ? "default" : "ghost"}
           size="sm"
@@ -61,7 +68,11 @@ export function ThemeToggle({ variant = "button", className }: ThemeToggleProps)
     if (theme === "system") {
       return <Monitor className="h-4 w-4" />;
     }
-    return actualTheme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />;
+    return actualTheme === "dark" ? (
+      <Moon className="h-4 w-4" />
+    ) : (
+      <Sun className="h-4 w-4" />
+    );
   };
 
   const getTitle = () => {

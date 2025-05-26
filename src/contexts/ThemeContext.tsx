@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -56,29 +56,23 @@ export function ThemeProvider({
     if (theme === "system") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = () => updateActualTheme();
-      
-      // Modern browsers
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener("change", handleChange);
-        return () => mediaQuery.removeEventListener("change", handleChange);
-      } else {
-        // Fallback for older browsers
-        mediaQuery.addListener(handleChange);
-        return () => mediaQuery.removeListener(handleChange);
-      }
+
+      // Use modern addEventListener (supported in all modern browsers)
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
     }
   }, [theme]);
 
   // Apply theme to document
   useEffect(() => {
     const root = document.documentElement;
-    
+
     // Remove existing theme classes
     root.classList.remove("light", "dark");
-    
+
     // Add current theme class
     root.classList.add(actualTheme);
-    
+
     // Update meta theme-color for mobile browsers
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
@@ -107,16 +101,9 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
   );
 }
 
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
-}
+// Export the context for the useTheme hook
+export { ThemeContext };
