@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { persistenceService } from "../services/persistenceService";
+import { persistenceOrchestrator } from "../services/persistenceOrchestrator";
 
 export interface SettingsHook {
   autoStartEnabled: boolean;
@@ -27,7 +27,7 @@ export function useSettings(): SettingsHook {
       }
 
       try {
-        await persistenceService.updateSettings(updates);
+        await persistenceOrchestrator.updateSettings(updates);
         console.log("Settings successfully saved to database");
       } catch (error) {
         console.error("Failed to update settings:", error);

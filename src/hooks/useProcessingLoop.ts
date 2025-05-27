@@ -6,6 +6,7 @@
 import { useCallback, useRef } from "react";
 import type { ScanTask } from "../types/index";
 import { PROCESSING_CONFIG } from "../config/queueConfig";
+import { logger } from "../utils/logger";
 
 export interface ProcessingLoopHook {
   runProcessingLoop: () => Promise<void>;
@@ -35,8 +36,7 @@ export function useProcessingLoop(
 
     const pendingTasks = currentTasks
       .filter(
-        (task) =>
-          task.status === "pending" && !currentlyProcessing.has(task.id)
+        (task) => task.status === "pending" && !currentlyProcessing.has(task.id)
       )
       .sort((a, b) => a.file.size - b.file.size); // Smaller files first
 
@@ -50,8 +50,7 @@ export function useProcessingLoop(
 
     // No pending tasks
     const pendingTasks = currentTasks.filter(
-      (task) =>
-        task.status === "pending" && !currentlyProcessing.has(task.id)
+      (task) => task.status === "pending" && !currentlyProcessing.has(task.id)
     );
 
     // No tasks currently being processed
@@ -65,9 +64,10 @@ export function useProcessingLoop(
       currentlyProcessing.size === 0;
 
     if (shouldStop) {
-      console.log(
-        `📊 Processing tasks: ${processingTasks.length}, Currently processing: ${currentlyProcessing.size}`
-      );
+      logger.debug("Processing status check", {
+        processingTasks: processingTasks.length,
+        currentlyProcessing: currentlyProcessing.size,
+      });
     }
 
     return shouldStop;
@@ -84,29 +84,35 @@ export function useProcessingLoop(
   // Process next available task
   const processNextTask = useCallback(async (): Promise<boolean> => {
     const nextTask = getNextPendingTask();
-    
+
     if (!nextTask) {
       return false; // No tasks to process
     }
 
     if (!canMakeRequest()) {
       const waitTime = getWaitTime();
-      console.log(
-        `Rate limit hit, waiting ${waitTime}ms before processing next task`
-      );
+      logger.debug("Rate limit hit, waiting before processing", {
+        waitTime: `${waitTime}ms`,
+        taskId: nextTask.id,
+      });
       await new Promise((resolve) => setTimeout(resolve, waitTime));
       return true; // Try again
     }
 
     const currentlyProcessing = getCurrentlyProcessing();
     currentlyProcessing.add(nextTask.id);
-    console.log(`Processing task ${nextTask.id}: ${nextTask.file.name}`);
+    logger.scan("processing", nextTask.file.name, "started", {
+      taskId: nextTask.id,
+    });
 
     try {
       await processTask(nextTask);
       return true;
     } catch (error) {
-      console.error(`Error in processNextTask for ${nextTask.id}:`, error);
+      logger.error("Error in processNextTask", error, {
+        taskId: nextTask.id,
+        fileName: nextTask.file.name,
+      });
       currentlyProcessing.delete(nextTask.id);
       return true;
     }
@@ -125,7 +131,7 @@ export function useProcessingLoop(
     }
 
     processingLoopRunning.current = true;
-    console.log("Starting processing loop");
+    logger.info("Starting processing loop");
 
     try {
       // Main processing loop
@@ -133,13 +139,13 @@ export function useProcessingLoop(
         const currentTasks = getCurrentTasks();
         const pendingCount = currentTasks.filter(
           (task) =>
-            task.status === "pending" &&
-            !getCurrentlyProcessing().has(task.id)
+            task.status === "pending" && !getCurrentlyProcessing().has(task.id)
         ).length;
 
-        console.log(
-          `🔍 Found ${pendingCount} pending tasks out of ${currentTasks.length} total tasks`
-        );
+        logger.debug("Processing loop status", {
+          pendingTasks: pendingCount,
+          totalTasks: currentTasks.length,
+        });
 
         // Try to process next task
         const hasWork = await processNextTask();
@@ -147,7 +153,9 @@ export function useProcessingLoop(
         if (!hasWork) {
           // No work available, check if we should stop
           if (shouldStopProcessing()) {
-            console.log("All tasks completed, stopping processing automatically");
+            logger.success(
+              "All tasks completed, stopping processing automatically"
+            );
             setIsProcessing(false);
             setProcessingRef(false);
             break;
@@ -155,17 +163,17 @@ export function useProcessingLoop(
 
           // Wait before checking again
           const waitTime = getLoopWaitTime();
-          console.log(
-            `⏳ No pending tasks, waiting ${waitTime}ms before checking again`
-          );
+          logger.debug("No pending tasks, waiting before checking again", {
+            waitTime: `${waitTime}ms`,
+          });
           await new Promise((resolve) => setTimeout(resolve, waitTime));
         }
       }
     } catch (error) {
-      console.error("Error in processing loop:", error);
+      logger.error("Error in processing loop", error);
     } finally {
       processingLoopRunning.current = false;
-      console.log("Processing loop ended");
+      logger.info("Processing loop ended");
     }
   }, [
     isProcessingActive,

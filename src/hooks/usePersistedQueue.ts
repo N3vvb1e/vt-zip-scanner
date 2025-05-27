@@ -4,6 +4,7 @@ import { useQueuePersistence } from "./useQueuePersistence";
 import { useQueueProcessing } from "./useQueueProcessing";
 import { useHistoryManager } from "./useHistoryManager";
 import { useSettings } from "./useSettings";
+import { logger } from "../utils/logger";
 
 /**
  * Main orchestrator hook for the persisted queue system
@@ -59,9 +60,9 @@ export function usePersistedQueue() {
     if (previousTaskIds.length > 0) {
       if (currentTaskIds.length === 0) {
         // Queue was cleared - cleanup all old tasks
-        console.log(
-          `🧹 Queue cleared: cleaning up ${previousTaskIds.length} old background operations`
-        );
+        logger.debug("Queue cleared - cleaning up background operations", {
+          oldTaskCount: previousTaskIds.length,
+        });
         processing.cleanupOldTasks(previousTaskIds);
       } else if (currentTaskIds.length > 0) {
         const hasAnyCommonTasks = previousTaskIds.some((id) =>
@@ -70,9 +71,10 @@ export function usePersistedQueue() {
 
         if (!hasAnyCommonTasks) {
           // Complete replacement detected - cleanup all old tasks
-          console.log(
-            `🔄 Queue replacement detected: ${previousTaskIds.length} old tasks → ${currentTaskIds.length} new tasks`
-          );
+          logger.debug("Queue replacement detected", {
+            oldTaskCount: previousTaskIds.length,
+            newTaskCount: currentTaskIds.length,
+          });
           processing.cleanupOldTasks(previousTaskIds);
         }
       }
@@ -90,11 +92,13 @@ export function usePersistedQueue() {
     let isMounted = true;
 
     const initializePersistence = async () => {
-      console.log("🚀 Starting direct initialization test...");
+      logger.debug("Starting direct initialization test");
 
       // Set a shorter timeout for testing
       setTimeout(() => {
-        console.log("⏰ Timeout reached, setting initialized anyway");
+        logger.warn(
+          "Initialization timeout reached, setting initialized anyway"
+        );
         if (isMounted) {
           setIsInitialized(true);
         }
@@ -102,26 +106,26 @@ export function usePersistedQueue() {
 
       try {
         // Test direct persistence service call
-        console.log("🔧 Testing direct persistence service...");
-        const { persistenceService } = await import(
-          "../services/persistenceService"
+        logger.debug("Testing direct persistence service");
+        const { persistenceOrchestrator } = await import(
+          "../services/persistenceOrchestrator"
         );
 
-        console.log("🚀 Calling persistenceService.init()...");
-        await persistenceService.init();
-        console.log("✅ Direct persistence service init completed");
+        logger.debug("Calling persistenceOrchestrator.init()");
+        await persistenceOrchestrator.init();
+        logger.success("Direct persistence service init completed");
 
-        console.log("🔧 Calling persistenceService.getSettings()...");
-        const settings = await persistenceService.getSettings();
-        console.log("✅ Direct settings loaded:", settings);
+        logger.debug("Loading settings from persistence");
+        const settings = await persistenceOrchestrator.getSettings();
+        logger.success("Direct settings loaded", settings);
 
-        console.log("🔧 Setting isInitialized to true directly");
+        logger.debug("Setting isInitialized to true");
         setIsInitialized(true);
-        console.log("✨ Direct initialization completed successfully");
+        logger.success("Direct initialization completed successfully");
       } catch (error) {
-        console.error("❌ Direct initialization failed:", error);
+        logger.error("Direct initialization failed", error);
         if (isMounted) {
-          console.log("🔧 Setting isInitialized to true despite error");
+          logger.warn("Setting isInitialized to true despite error");
           setIsInitialized(true);
         }
       }

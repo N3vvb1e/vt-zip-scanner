@@ -11,6 +11,7 @@ import { useTaskPolling } from "./useTaskPolling";
 import { useTaskProcessor } from "./useTaskProcessor";
 import { useProcessingLoop } from "./useProcessingLoop";
 import { useTaskCompletion } from "./useTaskCompletion";
+import { logger } from "../utils/logger";
 
 export interface QueueProcessingHook {
   isProcessing: boolean;
@@ -112,14 +113,14 @@ export function useQueueProcessing(
 
   // Start processing the queue
   const startProcessing = useCallback(() => {
-    console.log("Starting processing...");
+    logger.info("Starting queue processing");
     setIsProcessing(true);
     processingRef.current = true;
   }, []);
 
   // Stop processing the queue
   const stopProcessing = useCallback(() => {
-    console.log("Stopping processing...");
+    logger.info("Stopping queue processing");
     setIsProcessing(false);
     processingRef.current = false;
   }, []);
@@ -127,14 +128,14 @@ export function useQueueProcessing(
   // Clean up background operations for old tasks
   const cleanupOldTasks = useCallback(
     (oldTaskIds: string[]) => {
-      console.log(
-        `🧹 Cleaning up ${oldTaskIds.length} old background operations`
-      );
+      logger.debug("Cleaning up old background operations", {
+        taskCount: oldTaskIds.length,
+      });
 
       // Stop polling for old tasks
       oldTaskIds.forEach((taskId) => {
         if (taskPolling.isPolling(taskId)) {
-          console.log(`  🛑 Stopping polling for old task: ${taskId}`);
+          logger.debug("Stopping polling for old task", { taskId });
           taskPolling.stopPolling(taskId);
         }
       });
@@ -143,7 +144,7 @@ export function useQueueProcessing(
       const scanTimes = getScanStartTimes();
       oldTaskIds.forEach((taskId) => {
         if (scanTimes.has(taskId)) {
-          console.log(`  ⏰ Clearing scan time for old task: ${taskId}`);
+          logger.debug("Clearing scan time for old task", { taskId });
           scanTimes.delete(taskId);
         }
       });
@@ -152,7 +153,7 @@ export function useQueueProcessing(
       const currentlyProcessing = getCurrentlyProcessing();
       oldTaskIds.forEach((taskId) => {
         if (currentlyProcessing.has(taskId)) {
-          console.log(`  🔄 Removing old task from processing: ${taskId}`);
+          logger.debug("Removing old task from processing", { taskId });
           currentlyProcessing.delete(taskId);
         }
       });

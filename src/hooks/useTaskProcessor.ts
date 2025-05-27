@@ -6,10 +6,8 @@
 import { useCallback } from "react";
 import type { ScanTask, TaskStatus } from "../types/index";
 import { submitFile } from "../services/virusTotalService";
-import {
-  persistenceService,
-  type HistoryEntry,
-} from "../services/persistenceService";
+import { persistenceOrchestrator } from "../services/persistenceOrchestrator";
+import type { HistoryEntry } from "../services/repositories/historyRepository";
 import { calculateFileHashes } from "../utils/common";
 import { RATE_LIMIT_CONFIG, PROCESSING_CONFIG } from "../config/queueConfig";
 
@@ -202,7 +200,7 @@ export function useTaskProcessor(
 
         // Step 2: Check for existing scan
         console.log(`Checking for existing scan of: ${task.file.name}`);
-        const existingScan = await persistenceService.findExistingScan(
+        const existingScan = await persistenceOrchestrator.findExistingScan(
           fileHashes.sha256,
           fileHashes.size
         );

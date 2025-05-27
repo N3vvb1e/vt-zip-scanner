@@ -5,8 +5,9 @@
 
 import { useEffect, useRef } from "react";
 import type { ScanTask } from "../types/index";
-import { persistenceService } from "../services/persistenceService";
+import { persistenceOrchestrator } from "../services/persistenceOrchestrator";
 import { SAVE_CONFIG } from "../config/queueConfig";
+import { logger } from "../utils/logger";
 
 export interface QueuePersistenceHook {
   isInitialized: boolean;
@@ -29,43 +30,40 @@ export function useQueuePersistence(
   // Initialize persistence service and load saved data
   const initializePersistence = async () => {
     try {
-      console.log("🔧 Step 1: Initializing persistence service...");
-      await persistenceService.init();
-      console.log("✅ Step 1 completed");
+      logger.debug("Initializing persistence service");
+      await persistenceOrchestrator.init();
+      logger.success("Persistence service initialized");
 
-      console.log("🔧 Step 2: Cleaning up invalid history entries...");
+      logger.debug("Cleaning up invalid history entries");
       const cleanedCount =
-        await persistenceService.cleanupInvalidHistoryEntries();
+        await persistenceOrchestrator.cleanupInvalidHistoryEntries();
       if (cleanedCount > 0) {
-        console.log(`✅ Cleaned up ${cleanedCount} invalid history entries`);
+        logger.success("History cleanup completed", { cleanedCount });
       }
-      console.log("✅ Step 2 completed");
 
-      console.log("🔧 Step 3: Loading settings...");
-      const settings = await persistenceService.getSettings();
-      console.log("✅ Step 3 completed, settings:", settings);
+      logger.debug("Loading settings");
+      const settings = await persistenceOrchestrator.getSettings();
+      logger.success("Settings loaded", settings);
 
-      console.log("🔧 Step 4: Loading saved queue...");
-      const savedTasks = await persistenceService.loadQueue();
+      logger.debug("Loading saved queue");
+      const savedTasks = await persistenceOrchestrator.loadQueue();
       if (savedTasks.length > 0) {
-        console.log(`Loaded ${savedTasks.length} tasks from storage`);
+        logger.info("Tasks loaded from storage", {
+          taskCount: savedTasks.length,
+        });
       }
-      console.log("✅ Step 4 completed");
 
-      console.log("🔧 Step 5: Setting initialized flag...");
+      logger.debug("Setting initialized flag");
       isInitialized.current = true;
-      console.log("✅ Step 5 completed");
 
       const result = {
         savedTasks,
         autoStartEnabled: settings.autoStartScanning,
       };
-      console.log(
-        "🎉 useQueuePersistence initialization completed successfully"
-      );
+      logger.success("Queue persistence initialization completed");
       return result;
     } catch (error) {
-      console.error("❌ useQueuePersistence failed to initialize:", error);
+      logger.error("Queue persistence initialization failed", error);
       isInitialized.current = true;
       return {
         savedTasks: [],
@@ -107,24 +105,24 @@ export function useQueuePersistence(
           );
 
           if (hasStatusChanges) {
-            await persistenceService.saveQueue(activeTasks);
+            await persistenceOrchestrator.saveQueue(activeTasks);
             lastSaveTime.current = now;
             markSaved();
-            console.log(`📁 Auto-saved ${activeTasks.length} active tasks`);
+            logger.db("Auto-saved queue", "tasks", activeTasks.length);
           }
         } else {
           // Clear queue if no active tasks (only log once)
           const shouldLog =
             lastSaveTime.current === 0 || now - lastSaveTime.current > 60000; // Log max once per minute
-          await persistenceService.saveQueue([]);
+          await persistenceOrchestrator.saveQueue([]);
           lastSaveTime.current = now;
           markSaved();
           if (shouldLog) {
-            console.log("📁 Cleared queue - no active tasks");
+            logger.db("Cleared queue - no active tasks");
           }
         }
       } catch (error) {
-        console.error("Failed to save queue:", error);
+        logger.error("Failed to save queue", error);
       }
     };
 
@@ -140,7 +138,11 @@ export function useQueuePersistence(
     if (shouldSave && hasUnsavedChanges()) {
       // Debounce immediate saves to prevent excessive saves
       const timer = setTimeout(() => {
-        persistenceService.saveQueue(tasks).catch(console.error);
+        persistenceOrchestrator
+          .saveQueue(tasks)
+          .catch((error) =>
+            logger.error("Failed to save queue immediately", error)
+          );
         markSaved();
       }, SAVE_CONFIG.IMMEDIATE_SAVE_DELAY);
 
