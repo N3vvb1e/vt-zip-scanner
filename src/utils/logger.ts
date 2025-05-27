@@ -3,15 +3,15 @@
  * Provides structured logging with different levels and production-safe output
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 class Logger {
   private isDevelopment = import.meta.env.DEV;
-  private appName = 'VT-ZIP-Scanner';
+  private appName = "VT-ZIP-Scanner";
 
   /**
    * Debug level logging - only shown in development
@@ -19,7 +19,7 @@ class Logger {
    */
   debug(message: string, context?: LogContext) {
     if (this.isDevelopment) {
-      console.debug(`🔍 [${this.appName}] ${message}`, context || '');
+      console.debug(`🔍 [${this.appName}] ${message}`, context || "");
     }
   }
 
@@ -29,7 +29,7 @@ class Logger {
    */
   info(message: string, context?: LogContext) {
     if (this.isDevelopment) {
-      console.info(`ℹ️ [${this.appName}] ${message}`, context || '');
+      console.info(`ℹ️ [${this.appName}] ${message}`, context || "");
     }
   }
 
@@ -38,15 +38,19 @@ class Logger {
    * Use for recoverable errors or important notices
    */
   warn(message: string, context?: LogContext) {
-    console.warn(`⚠️ [${this.appName}] ${message}`, context || '');
+    console.warn(`⚠️ [${this.appName}] ${message}`, context || "");
   }
 
   /**
    * Error level logging - shown in all environments
    * Use for errors that need attention
    */
-  error(message: string, error?: Error | any, context?: LogContext) {
-    console.error(`❌ [${this.appName}] ${message}`, error || '', context || '');
+  error(message: string, error?: Error | unknown, context?: LogContext) {
+    console.error(
+      `❌ [${this.appName}] ${message}`,
+      error || "",
+      context || ""
+    );
   }
 
   /**
@@ -55,7 +59,7 @@ class Logger {
    */
   success(message: string, context?: LogContext) {
     if (this.isDevelopment) {
-      console.info(`✅ [${this.appName}] ${message}`, context || '');
+      console.info(`✅ [${this.appName}] ${message}`, context || "");
     }
   }
 
@@ -98,9 +102,9 @@ class Logger {
       method,
       url,
       status,
-      duration: duration ? `${duration}ms` : undefined
+      duration: duration ? `${duration}ms` : undefined,
     };
-    
+
     if (status && status >= 400) {
       this.warn(`API ${method} ${url} failed`, context);
     } else {
@@ -111,12 +115,17 @@ class Logger {
   /**
    * Log file operations
    */
-  file(operation: string, fileName: string, size?: number, context?: LogContext) {
+  file(
+    operation: string,
+    fileName: string,
+    size?: number,
+    context?: LogContext
+  ) {
     const fileContext = {
       operation,
       fileName,
       size: size ? `${(size / 1024 / 1024).toFixed(2)}MB` : undefined,
-      ...context
+      ...context,
     };
     this.debug(`File ${operation}`, fileContext);
   }
@@ -124,17 +133,22 @@ class Logger {
   /**
    * Log scanning operations
    */
-  scan(operation: string, fileName: string, status?: string, context?: LogContext) {
+  scan(
+    operation: string,
+    fileName: string,
+    status?: string,
+    context?: LogContext
+  ) {
     const scanContext = {
       operation,
       fileName,
       status,
-      ...context
+      ...context,
     };
-    
-    if (status === 'error') {
+
+    if (status === "error") {
       this.error(`Scan ${operation} failed`, undefined, scanContext);
-    } else if (status === 'completed') {
+    } else if (status === "completed") {
       this.success(`Scan ${operation} completed`, scanContext);
     } else {
       this.info(`Scan ${operation}`, scanContext);
@@ -149,7 +163,7 @@ class Logger {
       operation,
       table,
       count,
-      ...context
+      ...context,
     };
     this.debug(`DB ${operation}`, dbContext);
   }

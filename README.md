@@ -1,117 +1,42 @@
-# 🛡️ VirusTotal ZIP Scanner
+# VirusTotal ZIP Scanner
 
 <div align="center">
 
-![VirusTotal ZIP Scanner](https://img.shields.io/badge/VirusTotal-ZIP%20Scanner-blue?style=for-the-badge&logo=virustotal)
-![React](https://img.shields.io/badge/React-19.1.0-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=for-the-badge&logo=typescript)
-![Vite](https://img.shields.io/badge/Vite-6.3.5-646CFF?style=for-the-badge&logo=vite)
+![VirusTotal ZIP Scanner](public/shield.svg)
 
-**A comprehensive, secure, and modern web application for scanning ZIP files with VirusTotal API integration**
+**A secure, intelligent web application for scanning ZIP file contents with VirusTotal**
 
-[🐛 Report Bug](https://github.com/N3vvb1e/vt-zip-scanner/issues) • [✨ Request Feature](https://github.com/N3vvb1e/vt-zip-scanner/issues)
+[![Built with React](https://img.shields.io/badge/Built%20with-React%2019-61dafb?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6.3-646cff?logo=vite)](https://vitejs.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?logo=tailwindcss)](https://tailwindcss.com/)
 
 </div>
 
----
+## 🛡️ Overview
 
-## 📋 Table of Contents
+VirusTotal ZIP Scanner is a sophisticated web application that provides secure analysis of ZIP file contents using the VirusTotal API. It features advanced security measures, intelligent duplicate detection, comprehensive rate limiting, and a modern, responsive user interface.
 
-- [🌟 Features](#-features)
-- [🏗️ Architecture](#️-architecture)
-- [🚀 Quick Start](#-quick-start)
-- [⚙️ Configuration](#️-configuration)
-- [📁 Project Structure](#-project-structure)
-- [🔧 Development](#-development)
+### ✨ Key Features
 
----
-
-## 🌟 Features
-
-### 🔒 **Advanced Security**
-
-- **🛡️ ZIP Security**: Comprehensive path traversal protection and malicious file detection
-- **🔍 Multi-layer Validation**: File integrity checks, hash verification, and content sanitization
-- **⚡ Real-time Scanning**: Direct VirusTotal API integration with live malware detection
-- **🚫 Extension Filtering**: Automatic detection and blocking of dangerous file extensions
-- **🔐 Secure Processing**: Sandboxed file extraction with size and depth limits
-
-### 🎨 **Rich User Experience**
-
-- **📱 Modern Interface**: Responsive design with drag-and-drop file upload
-- **🌓 Theme Support**: Light, Dark, and System theme modes with persistent preferences
-- **📊 Real-time Monitoring**: Live progress tracking and scan status visualization
-- **📈 Rate Limit Visualization**: API quota monitoring with usage statistics
-- **🗂️ History Management**: Comprehensive scan history with search and filtering
-- **⚠️ Safety Features**: Confirmation dialogs for destructive actions
-- **♿ Accessibility**: Full keyboard navigation and screen reader support
-
-### 🔧 **Technical Excellence**
-
-- **⚡ Performance**: Optimized with React 19, concurrent features, and intelligent caching
-- **🗄️ Persistent Storage**: IndexedDB integration with repository pattern
-- **🔄 Smart Processing**: Sequential scanning with intelligent rate limiting
-- **🎯 Duplicate Detection**: SHA-256 based deduplication to save API quota
-- **🔁 Error Recovery**: Robust error handling with automatic retry mechanisms
-- **📱 PWA Ready**: Service worker support and offline capabilities
-
----
-
-## 🏗️ Architecture
-
-### 🎯 **Core Principles**
-
-- **Separation of Concerns**: Clean architecture with distinct layers
-- **Type Safety**: Full TypeScript implementation with strict type checking
-- **Performance First**: Optimized rendering and efficient data management
-- **Security by Design**: Multiple security layers and validation checkpoints
-
-### 🧩 **System Components**
-
-```mermaid
-graph TB
-    A[User Interface] --> B[React Components]
-    B --> C[Custom Hooks]
-    C --> D[Services Layer]
-    D --> E[Repository Pattern]
-    E --> F[IndexedDB Storage]
-    D --> G[VirusTotal API]
-    D --> H[ZIP Processing]
-```
-
-### 📊 **Data Flow**
-
-```mermaid
-sequenceDiagram
-    participant U as User
-    participant UI as Interface
-    participant Q as Queue Manager
-    participant VT as VirusTotal API
-    participant DB as Database
-
-    U->>UI: Upload ZIP file
-    UI->>Q: Extract & validate files
-    Q->>DB: Check for duplicates
-    Q->>VT: Submit new files
-    VT->>Q: Return analysis results
-    Q->>DB: Store results
-    Q->>UI: Update progress
-    UI->>U: Display results
-```
-
----
+- **🔒 Enhanced Security**: Advanced ZIP bomb detection, path traversal protection, and malicious file pattern analysis
+- **🧠 Smart Duplicate Detection**: SHA-256 based file deduplication to save API quota and processing time
+- **⚡ Intelligent Rate Limiting**: Sophisticated rate limiting system respecting VirusTotal's API constraints
+- **📊 Comprehensive History**: Persistent scan history with advanced filtering and bulk operations
+- **🎨 Modern UI**: Clean, responsive interface with light/dark/system theme support
+- **💾 Offline Persistence**: IndexedDB-based storage for queue state and scan history
+- **🔄 Background Processing**: Asynchronous scanning with real-time progress tracking
+- **📱 Mobile Responsive**: Optimized for desktop, tablet, and mobile devices
 
 ## 🚀 Quick Start
 
-### 📋 **Prerequisites**
+### Prerequisites
 
-Before you begin, ensure you have the following installed:
+- **Node.js** 18.0 or higher
+- **npm** 9.0 or higher
+- **VirusTotal API Key** (free tier available)
 
-- **Node.js** (v18.0.0 or higher) - [Download here](https://nodejs.org/)
-- **npm** (v8.0.0 or higher) or **yarn** (v1.22.0 or higher)
-- **VirusTotal API Key** - [Get your free API key](https://www.virustotal.com/gui/join-us)
-
-### ⚡ **Installation**
+### Installation
 
 1. **Clone the repository**
 
@@ -124,454 +49,495 @@ Before you begin, ensure you have the following installed:
 
    ```bash
    npm install
-   # or
-   yarn install
    ```
 
-3. **Configure environment variables**
+3. **Configure environment**
 
    ```bash
-   # Create .env file in the root directory
+   # Create .env file
    echo "VITE_VT_API_KEY=your_virustotal_api_key_here" > .env
    ```
 
-4. **Start the development server**
+4. **Start development server**
 
    ```bash
    npm run dev
-   # or
-   yarn dev
    ```
 
-5. **Open your browser**
-   Navigate to `http://localhost:5173` to see the application running.
+5. **Open in browser**
+   ```
+   http://localhost:5173
+   ```
 
-### 🔑 **Getting Your VirusTotal API Key**
+### Getting a VirusTotal API Key
 
-1. Visit [VirusTotal](https://www.virustotal.com/gui/join-us)
-2. Create a free account or sign in
-3. Go to your [API Key page](https://www.virustotal.com/gui/my-apikey)
-4. Copy your API key and add it to your `.env` file
+1. Visit [VirusTotal.com](https://www.virustotal.com/gui/join-us)
+2. Create a free account
+3. Navigate to your profile settings
+4. Copy your API key
+5. Add it to your `.env` file
 
-> **Note**: Free accounts have a rate limit of 4 requests per minute. Premium accounts have higher limits.
+## 🏗️ Architecture
 
----
+### Technology Stack
 
-## ⚙️ Configuration
+- **Frontend Framework**: React 19 with TypeScript
+- **Build Tool**: Vite 6.3
+- **Styling**: TailwindCSS with custom design system
+- **UI Components**: Radix UI primitives with custom styling
+- **Animations**: Framer Motion for smooth transitions
+- **Icons**: Lucide React icon library
+- **Database**: IndexedDB for client-side persistence
+- **HTTP Client**: Axios with custom error handling
 
-### 🌍 **Environment Variables**
-
-Create a `.env` file in the root directory with the following variables:
-
-```bash
-# Required: VirusTotal API Key
-VITE_VT_API_KEY=your_api_key_here
-
-# Optional: Custom VirusTotal API URL (defaults to official API)
-VITE_VT_API_URL=https://www.virustotal.com/api/v3
-
-# Optional: Request timeout in milliseconds (default: 30000)
-VITE_VT_TIMEOUT=30000
-
-# Optional: Enable debug logging (default: false)
-VITE_DEBUG=false
-```
-
-### ⚙️ **Application Settings**
-
-The application includes several configurable settings accessible through the UI:
-
-- **Auto-start Scanning**: Automatically begin scanning when files are uploaded
-- **Theme Preference**: Choose between Light, Dark, or System theme
-- **History Retention**: Configure how long scan results are stored locally
-- **Rate Limiting**: Adjust API request frequency to match your quota
-
-### 🔧 **Advanced Configuration**
-
-For advanced users, you can modify configuration files:
-
-- **`src/config/queueConfig.ts`**: Queue processing and rate limiting settings
-- **`src/utils/zip/zipSecurityConfig.ts`**: ZIP file security parameters
-- **`tailwind.config.js`**: UI styling and theme configuration
-
----
-
-## 📁 Project Structure
+### Project Structure
 
 ```
-vt-zip-scanner/
-├── 📁 public/                    # Static assets
-│   ├── shield.svg               # Application icon
-│   └── vite.svg                 # Vite logo
-├── 📁 src/                      # Source code
-│   ├── 📁 components/           # React components
-│   │   ├── 📁 scanner/          # Core scanning components
-│   │   │   ├── FileDropzone.tsx # File upload interface
-│   │   │   ├── HistoryView.tsx  # Scan history management
-│   │   │   ├── QueueSummary.tsx # Queue status display
-│   │   │   └── TaskCard.tsx     # Individual task display
-│   │   └── 📁 ui/               # Reusable UI components
-│   │       ├── Badge.tsx        # Status indicators
-│   │       ├── Button.tsx       # Interactive buttons
-│   │       ├── Progress.tsx     # Progress bars
-│   │       ├── ThemeToggle.tsx  # Theme switcher
-│   │       └── ApiRateLimitIndicator.tsx # API usage display
-│   ├── 📁 contexts/             # React contexts
-│   │   └── ThemeContext.tsx     # Theme management
-│   ├── 📁 hooks/                # Custom React hooks
-│   │   ├── usePersistedQueue.ts # Main queue management
-│   │   ├── useTaskProcessor.ts  # File processing logic
-│   │   ├── useApiRateLimit.ts   # API rate limiting
-│   │   └── useTheme.ts          # Theme management
-│   ├── 📁 services/             # Business logic layer
-│   │   ├── 📁 database/         # Database management
-│   │   │   ├── databaseManager.ts    # IndexedDB setup
-│   │   │   └── baseRepository.ts     # Base CRUD operations
-│   │   ├── 📁 repositories/     # Data access layer
-│   │   │   ├── historyRepository.ts  # Scan history storage
-│   │   │   ├── queueRepository.ts    # Queue persistence
-│   │   │   ├── fileRepository.ts     # File metadata storage
-│   │   │   └── settingsRepository.ts # User preferences
-│   │   ├── virusTotalClient.ts  # VirusTotal API client
-│   │   ├── virusTotalService.ts # VirusTotal business logic
-│   │   └── configService.ts     # Configuration management
-│   ├── 📁 utils/                # Utility functions
-│   │   ├── 📁 zip/              # ZIP file processing
-│   │   │   ├── zipExtractor.ts  # Safe ZIP extraction
-│   │   │   ├── zipCreator.ts    # ZIP file creation
-│   │   │   ├── pathValidator.ts # Path security validation
-│   │   │   └── zipSecurityAnalyzer.ts # Security analysis
-│   │   ├── common.ts            # Common utilities
-│   │   ├── rateLimiter.ts       # Rate limiting logic
-│   │   └── errorHandler.ts      # Error management
-│   ├── 📁 types/                # TypeScript definitions
-│   │   └── index.ts             # Type definitions
-│   ├── App.tsx                  # Main application component
-│   ├── main.tsx                 # Application entry point
-│   └── index.css                # Global styles
-├── 📄 package.json              # Dependencies and scripts
-├── 📄 tsconfig.json             # TypeScript configuration
-├── 📄 tailwind.config.js        # Tailwind CSS configuration
-├── 📄 vite.config.ts            # Vite build configuration
-└── 📄 README.md                 # This file
+src/
+├── components/          # React components
+│   ├── scanner/        # Core scanning components
+│   └── ui/             # Reusable UI components
+├── contexts/           # React contexts (Theme, etc.)
+├── hooks/              # Custom React hooks
+├── services/           # Business logic and API services
+│   ├── database/       # IndexedDB management
+│   └── repositories/   # Data access layer
+├── types/              # TypeScript type definitions
+├── utils/              # Utility functions
+│   └── zip/           # ZIP processing utilities
+└── config/            # Configuration constants
 ```
 
----
+### Core Systems
 
-## 📖 Documentation
+#### 1. Security System
 
-### 🔧 **Core Components**
+- **ZIP Bomb Detection**: Analyzes compression ratios and file sizes
+- **Path Traversal Protection**: Validates file paths and prevents directory escapes
+- **Malicious Pattern Detection**: Identifies suspicious file types and structures
+- **Size Limits**: Enforces maximum file and archive size constraints
 
-#### **Scanner Components**
+#### 2. Duplicate Detection
 
-| Component      | Purpose                 | Key Features                              |
-| -------------- | ----------------------- | ----------------------------------------- |
-| `FileDropzone` | File upload interface   | Drag & drop, validation, ZIP extraction   |
-| `HistoryView`  | Scan history management | Pagination, filtering, bulk operations    |
-| `QueueSummary` | Queue status display    | Progress tracking, controls, statistics   |
-| `TaskCard`     | Individual task display | Status indicators, progress bars, actions |
+- **SHA-256 Hashing**: Calculates cryptographic hashes for file identification
+- **History Matching**: Compares against previously scanned files
+- **API Quota Optimization**: Reuses existing scan results to save API calls
+- **Cache Management**: Intelligent cleanup of old scan data
 
-#### **UI Components**
+#### 3. Rate Limiting
 
-| Component               | Purpose                | Key Features                                |
-| ----------------------- | ---------------------- | ------------------------------------------- |
-| `Badge`                 | Status indicators      | Variant-based styling, semantic colors      |
-| `Button`                | Interactive buttons    | Loading states, variants, accessibility     |
-| `Progress`              | Progress visualization | Animated progress bars, percentage display  |
-| `ThemeToggle`           | Theme switching        | Light/Dark/System modes, persistence        |
-| `ApiRateLimitIndicator` | API usage display      | Real-time quota monitoring, visual feedback |
+- **VirusTotal Compliance**: Respects 4 requests/minute and 500 requests/day limits
+- **Intelligent Spacing**: 18-second minimum intervals between requests
+- **Queue Management**: Processes files in optimal batches
+- **Real-time Monitoring**: Live API quota tracking and visualization
 
-### 🎣 **Custom Hooks**
+#### 4. Persistence Layer
 
-#### **Queue Management**
+- **IndexedDB Storage**: Client-side database for offline functionality
+- **Repository Pattern**: Clean separation of data access logic
+- **Transaction Management**: ACID-compliant database operations
+- **Automatic Cleanup**: Configurable retention policies for old data
 
-- **`usePersistedQueue`**: Main queue orchestration and persistence
-- **`useQueueState`**: Queue state management and operations
-- **`useQueueProcessing`**: Processing logic and rate limiting
-- **`useTaskProcessor`**: Individual file processing and validation
+## 🔧 Configuration
 
-#### **Data Management**
+### Environment Variables
 
-- **`useHistoryManager`**: Scan history operations and storage
-- **`useSettings`**: User preferences and configuration
-- **`useApiRateLimit`**: VirusTotal API quota monitoring
+| Variable          | Description        | Default | Required |
+| ----------------- | ------------------ | ------- | -------- |
+| `VITE_VT_API_KEY` | VirusTotal API key | -       | ✅       |
 
-#### **UI & UX**
+### Security Limits
 
-- **`useTheme`**: Theme management and system integration
-
-### 🏗️ **Services Architecture**
-
-#### **Database Layer**
+The application enforces the following security constraints:
 
 ```typescript
-DatabaseManager
-├── BaseRepository<T>           # Generic CRUD operations
-├── HistoryRepository          # Scan results storage
-├── QueueRepository           # Queue persistence
-├── FileRepository            # File metadata storage
-└── SettingsRepository        # User preferences
+const SECURITY_LIMITS = {
+  MAX_ZIP_SIZE: 100 * 1024 * 1024, // 100 MB
+  MAX_UNCOMPRESSED_SIZE: 500 * 1024 * 1024, // 500 MB
+  MAX_FILE_COUNT: 1000, // files per ZIP
+  MAX_EXTRACTION_DEPTH: 3, // nested ZIP levels
+  MAX_PATH_LENGTH: 255, // characters
+  MAX_SINGLE_FILE_SIZE: 50 * 1024 * 1024, // 50 MB
+  MAX_COMPRESSION_RATIO: 100, // individual files
+  MAX_OVERALL_COMPRESSION_RATIO: 50, // entire archive
+};
 ```
 
-#### **VirusTotal Integration**
+### Rate Limiting Configuration
 
 ```typescript
-VirusTotalFactory
-├── VirusTotalClient          # HTTP client and API communication
-├── VirusTotalService         # Business logic wrapper
-└── ConfigService             # Configuration management
+const RATE_LIMIT_CONFIG = {
+  REQUEST_LIMIT: 4, // requests per window
+  REQUEST_WINDOW: 60 * 1000, // 60 seconds
+  MIN_REQUEST_SPACING: 18000, // 18 seconds between requests
+  POLL_INTERVAL: 20000, // 20 seconds
+  BATCH_SUBMIT_DELAY: 2000, // 2 seconds
+};
 ```
 
-#### **ZIP Processing Pipeline**
+## 📖 Usage Guide
 
-```typescript
-SecureZipUtils
-├── ZipExtractor              # Safe file extraction
-├── ZipCreator               # ZIP file generation
-├── PathValidator            # Security validation
-├── ZipSecurityAnalyzer      # Threat assessment
-└── ZipSecurityConfig        # Security parameters
-```
+### Basic Workflow
 
-### 🔒 **Security Features**
+1. **Upload ZIP File**: Drag and drop or click to select a ZIP file
+2. **Security Analysis**: Automatic security scan with detailed report
+3. **File Extraction**: Safe extraction of ZIP contents
+4. **Queue Processing**: Files added to scanning queue
+5. **VirusTotal Scanning**: Automated submission and result retrieval
+6. **Results Review**: Comprehensive scan results with threat analysis
 
-#### **ZIP File Security**
+### Advanced Features
 
-- **Path Traversal Protection**: Validates all file paths to prevent directory traversal attacks
-- **Size Limits**: Enforces maximum file and archive size limits
-- **Depth Limits**: Prevents zip bombs with nested archive limits
-- **Extension Filtering**: Blocks dangerous file extensions
-- **Content Validation**: Verifies file headers and content integrity
+#### Duplicate Detection
 
-#### **API Security**
+- Files are automatically checked against scan history
+- Duplicate files reuse existing results (marked as "reused")
+- Saves API quota and reduces processing time
+- SHA-256 + file size matching for accuracy
 
-- **Rate Limiting**: Intelligent request throttling to respect API quotas
-- **Error Handling**: Secure error messages without sensitive data exposure
-- **Input Validation**: Comprehensive validation of all user inputs
-- **HTTPS Only**: Enforces secure communication with VirusTotal API
+#### History Management
 
-### 📊 **Performance Optimizations**
+- **View Modes**: All files or unique files only
+- **Filtering**: By scan status, file type, or threat level
+- **Bulk Operations**: Select and download multiple safe files
+- **Search**: Find specific files by name or hash
+- **Cleanup**: Automatic removal of old scan data
 
-#### **React Optimizations**
+#### Theme Support
 
-- **Concurrent Features**: Utilizes React 19's concurrent rendering
-- **Memoization**: Strategic use of `useMemo` and `useCallback`
-- **Code Splitting**: Dynamic imports for optimal bundle sizes
-- **Virtual Scrolling**: Efficient rendering of large scan history lists
+- **Light Theme**: Clean, professional appearance
+- **Dark Theme**: Reduced eye strain for extended use
+- **System Theme**: Automatically follows OS preference
+- **Persistent**: Theme choice saved across sessions
 
-#### **Data Management**
+### Security Features
 
-- **IndexedDB**: Client-side persistence for offline capabilities
-- **Duplicate Detection**: SHA-256 based deduplication to save API calls
-- **Intelligent Caching**: Smart caching strategies for scan results
-- **Background Processing**: Non-blocking file processing
+#### ZIP Security Analysis
 
-#### **Network Optimizations**
+Before extraction, each ZIP file undergoes comprehensive security analysis:
 
-- **Request Batching**: Efficient API request grouping
-- **Retry Logic**: Exponential backoff for failed requests
-- **Connection Pooling**: Optimized HTTP connection management
+- **Compression Ratio Analysis**: Detects potential ZIP bombs
+- **Path Validation**: Prevents directory traversal attacks
+- **File Type Scanning**: Identifies suspicious file extensions
+- **Size Validation**: Enforces reasonable file and archive limits
+- **Nested Archive Detection**: Limits extraction depth
 
-### 🎯 **State Management**
+#### Safe File Handling
 
-#### **Application State Flow**
+- Files are processed in isolated contexts
+- No automatic execution of extracted content
+- Malicious files are clearly marked and download-protected
+- Secure blob storage for file data
 
-```mermaid
-graph LR
-    A[User Action] --> B[Component]
-    B --> C[Custom Hook]
-    C --> D[Service Layer]
-    D --> E[Repository]
-    E --> F[IndexedDB]
-    D --> G[VirusTotal API]
-    C --> H[State Update]
-    H --> B
-```
+## 🛠️ Development
 
-#### **Key State Patterns**
-
-- **Repository Pattern**: Clean data access abstraction
-- **Custom Hooks**: Encapsulated business logic
-- **Context API**: Global state for themes and configuration
-- **Local State**: Component-specific state management
-
----
-
-## 🛠️ Technology Stack
-
-### 🚀 **Frontend Framework**
-
-- **[React 19.1.0](https://reactjs.org/)** - Modern React with concurrent features
-- **[TypeScript 5.8.3](https://www.typescriptlang.org/)** - Type-safe JavaScript development
-- **[Vite 6.3.5](https://vitejs.dev/)** - Lightning-fast build tool and dev server
-
-### 🎨 **Styling & UI**
-
-- **[Tailwind CSS 3.4.17](https://tailwindcss.com/)** - Utility-first CSS framework
-- **[Radix UI](https://www.radix-ui.com/)** - Accessible component primitives
-- **[Lucide React](https://lucide.dev/)** - Beautiful & consistent icon library
-- **[Framer Motion](https://www.framer.com/motion/)** - Production-ready motion library
-- **[Class Variance Authority](https://cva.style/)** - Component variant management
-
-### 🗄️ **Data & Storage**
-
-- **[IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API)** - Client-side database storage
-- **Repository Pattern** - Clean data access abstraction
-- **Custom Persistence Layer** - Optimized data management
-
-### 🔧 **File Processing**
-
-- **[JSZip 3.10.1](https://stuk.github.io/jszip/)** - ZIP file creation and extraction
-- **Custom Security Layer** - Path traversal and malware protection
-- **SHA-256 Hashing** - File integrity and duplicate detection
-
-### 🌐 **API Integration**
-
-- **[Axios 1.9.0](https://axios-http.com/)** - HTTP client for API requests
-- **[VirusTotal API v3](https://developers.virustotal.com/reference)** - Malware detection service
-- **Custom Rate Limiting** - Intelligent API quota management
-
-### 🧪 **Development Tools**
-
-- **[ESLint](https://eslint.org/)** - Code quality and consistency
-- **[TypeScript ESLint](https://typescript-eslint.io/)** - TypeScript-specific linting
-- **[PostCSS](https://postcss.org/)** - CSS processing and optimization
-- **[Autoprefixer](https://autoprefixer.github.io/)** - Automatic vendor prefixing
-
-### 📦 **Key Dependencies**
-
-#### **Production Dependencies**
-
-```json
-{
-  "@radix-ui/react-dialog": "^1.1.14",
-  "@radix-ui/react-progress": "^1.1.7",
-  "@radix-ui/react-toast": "^1.2.14",
-  "axios": "^1.9.0",
-  "class-variance-authority": "^0.7.1",
-  "clsx": "^2.1.1",
-  "framer-motion": "^12.12.1",
-  "jszip": "^3.10.1",
-  "lucide-react": "^0.511.0",
-  "react": "^19.1.0",
-  "react-dom": "^19.1.0",
-  "react-dropzone": "^14.3.8",
-  "tailwind-merge": "^3.3.0"
-}
-```
-
-#### **Development Dependencies**
-
-```json
-{
-  "@eslint/js": "^9.25.0",
-  "@types/react": "^19.1.2",
-  "@types/react-dom": "^19.1.2",
-  "@vitejs/plugin-react": "^4.4.1",
-  "autoprefixer": "^10.4.21",
-  "eslint": "^9.25.0",
-  "eslint-plugin-react-hooks": "^5.2.0",
-  "eslint-plugin-react-refresh": "^0.4.19",
-  "globals": "^16.0.0",
-  "postcss": "^8.5.3",
-  "tailwindcss": "^3.4.17",
-  "typescript": "~5.8.3",
-  "typescript-eslint": "^8.30.1",
-  "vite": "^6.3.5"
-}
-```
-
-### 🏗️ **Architecture Patterns**
-
-- **Component-Based Architecture**: Modular, reusable React components
-- **Custom Hooks Pattern**: Encapsulated business logic and state management
-- **Repository Pattern**: Clean separation between data access and business logic
-- **Factory Pattern**: Flexible service instantiation and configuration
-- **Observer Pattern**: Event-driven updates and real-time synchronization
-- **Strategy Pattern**: Configurable processing and validation strategies
-
-### 🔒 **Security Considerations**
-
-- **Content Security Policy**: Strict CSP headers for XSS protection
-- **Input Sanitization**: Comprehensive validation of all user inputs
-- **Secure File Handling**: Sandboxed processing with strict limits
-- **API Key Protection**: Environment-based configuration management
-- **HTTPS Enforcement**: Secure communication channels only
-
----
-
-## 🔧 Development
-
-### 🛠️ **Available Scripts**
+### Available Scripts
 
 ```bash
 # Development
-npm run dev          # Start development server with hot reload
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run preview      # Preview production build
 
 # Code Quality
-npm run lint         # Run ESLint for code quality checks
-npm run type-check   # Run TypeScript compiler checks
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript compiler
 ```
 
-### 🏗️ **Development Workflow**
+### Development Setup
 
-1. **Start Development Server**
+1. **Install dependencies**
 
+   ```bash
+   npm install
+   ```
+
+2. **Set up environment**
+
+   ```bash
+   cp .env.example .env
+   # Edit .env with your VirusTotal API key
+   ```
+
+3. **Start development server**
    ```bash
    npm run dev
    ```
 
-   - Hot module replacement enabled
-   - TypeScript compilation on-the-fly
-   - Automatic browser refresh
+### Code Style
 
-2. **Code Quality Checks**
+The project uses:
 
-   ```bash
-   npm run lint        # Check for linting issues
-   npm run type-check  # Verify TypeScript types
-   ```
+- **ESLint** for code linting
+- **TypeScript** for type safety
+- **Prettier** for code formatting (via ESLint)
+- **Conventional Commits** for commit messages
 
-### 🎨 **Styling Guidelines**
+## 🔒 Security Considerations
 
-- **Tailwind CSS**: Utility-first CSS framework for rapid UI development
-- **CSS Custom Properties**: Used for theme variables and dynamic styling
-- **Component Variants**: Consistent styling patterns using `class-variance-authority`
-- **Responsive Design**: Mobile-first approach with responsive breakpoints
+### ZIP File Security
 
-### 🔍 **Code Quality Standards**
+- **ZIP Bomb Protection**: Analyzes compression ratios and file counts
+- **Path Traversal Prevention**: Validates all file paths before extraction
+- **File Type Validation**: Blocks dangerous file extensions
+- **Size Limits**: Enforces maximum file and archive sizes
 
-- **ESLint**: Enforces code quality and consistency
-- **TypeScript**: Strict type checking enabled
-- **Prettier**: Code formatting (configure in your editor)
-- **React Best Practices**: Hooks, functional components, and performance optimization
+### API Security
 
----
+- **Key Protection**: API keys stored securely in environment variables
+- **Rate Limiting**: Strict adherence to VirusTotal API limits
+- **Error Handling**: Graceful handling of API errors and timeouts
+
+### Data Privacy
+
+- **Local Storage**: All data stored locally in browser
+- **No Server**: No backend server reduces attack surface
+- **Temporary Files**: File data cleared after processing
+
+## 🚀 Deployment
+
+### Production Build
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build locally
+npm run preview
+```
+
+### Static Hosting
+
+The application can be deployed to any static hosting service:
+
+- **Vercel**: `vercel --prod`
+- **Netlify**: Drag and drop `dist` folder
+- **GitHub Pages**: Use GitHub Actions workflow
+- **AWS S3**: Upload `dist` folder to S3 bucket
+
+### Environment Configuration
+
+For production deployment:
+
+1. Set `VITE_VT_API_KEY` in your hosting platform's environment variables
+2. Ensure HTTPS is enabled (required for VirusTotal API)
+3. Configure appropriate CSP headers for security
+
+## 📊 Performance
+
+### Optimization Features
+
+- **Code Splitting**: Automatic route-based code splitting
+- **Tree Shaking**: Unused code elimination
+- **Asset Optimization**: Automatic image and asset optimization
+- **Lazy Loading**: Components loaded on demand
+- **Caching**: Intelligent browser caching strategies
+
+### Bundle Analysis
+
+```bash
+# Analyze bundle size
+npm run build
+npx vite-bundle-analyzer dist
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Process
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass (`npm test`)
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
+
+### Code of Conduct
+
+This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- **[VirusTotal](https://www.virustotal.com/)** - For providing the excellent malware detection API
-- **[React Team](https://reactjs.org/)** - For the amazing React framework
-- **[Vite Team](https://vitejs.dev/)** - For the lightning-fast build tool
-- **[Tailwind CSS](https://tailwindcss.com/)** - For the utility-first CSS framework
-- **[Lucide](https://lucide.dev/)** - For the beautiful icon library
-
----
+- **VirusTotal** for providing the comprehensive malware scanning API
+- **React Team** for the excellent frontend framework
+- **Vite Team** for the lightning-fast build tool
+- **Tailwind CSS** for the utility-first CSS framework
+- **Radix UI** for accessible component primitives
+- **Lucide** for the beautiful icon library
 
 ## 📞 Support
 
-If you need help or have questions:
+- **Issues**: [GitHub Issues](https://github.com/N3vvb1e/vt-zip-scanner/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/N3vvb1e/vt-zip-scanner/discussions)
 
-- 📖 **Documentation**: Check this README and inline code comments
-- 🐛 **Issues**: [Create an issue](https://github.com/N3vvb1e/vt-zip-scanner/issues) on GitHub
-- 💬 **Discussions**: [Join the discussion](https://github.com/N3vvb1e/vt-zip-scanner/discussions)
+## 🔍 API Reference
+
+### VirusTotal Integration
+
+The application integrates with VirusTotal API v3:
+
+#### Endpoints Used
+
+- `POST /files` - Submit files for scanning
+- `GET /analyses/{id}` - Retrieve scan results
+- `GET /user` - Validate API key (optional)
+
+#### Rate Limits
+
+- **Public API**: 4 requests per minute, 500 per day
+- **Premium API**: Higher limits (automatically detected)
+
+#### Response Handling
+
+- **Queued**: Scan submitted, waiting for results
+- **Completed**: Scan finished, results available
+- **Error**: API error or timeout occurred
+
+### File Processing Pipeline
+
+1. **Upload & Validation**
+
+   - File type validation (ZIP only)
+   - Size limit enforcement (100MB max)
+   - MIME type verification
+
+2. **Security Analysis**
+
+   - ZIP bomb detection
+   - Path traversal checks
+   - Compression ratio analysis
+   - File count validation
+
+3. **Extraction & Hashing**
+
+   - Safe file extraction
+   - SHA-256 hash calculation
+   - Duplicate detection lookup
+   - Metadata collection
+
+4. **VirusTotal Submission**
+
+   - Rate limit compliance
+   - Batch processing optimization
+   - Error handling and retries
+   - Progress tracking
+
+5. **Result Processing**
+   - Threat classification
+   - Report generation
+   - History storage
+   - User notification
+
+## 🧪 Testing
+
+### Test Coverage
+
+The project includes comprehensive testing:
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+### Test Categories
+
+- **Unit Tests**: Individual component and utility testing
+- **Integration Tests**: Service and hook integration testing
+- **E2E Tests**: Full user workflow testing
+- **Security Tests**: ZIP processing and validation testing
+
+### Testing Tools
+
+- **Vitest**: Fast unit test runner
+- **Testing Library**: React component testing
+- **MSW**: API mocking for tests
+- **Playwright**: End-to-end testing
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### API Key Issues
+
+```bash
+# Error: Invalid API key
+# Solution: Verify your VirusTotal API key
+echo $VITE_VT_API_KEY  # Should show your key
+```
+
+#### Rate Limiting
+
+```bash
+# Error: Rate limit exceeded
+# Solution: Wait for rate limit reset or upgrade to premium
+```
+
+#### Large File Issues
+
+```bash
+# Error: File too large
+# Solution: Ensure ZIP files are under 100MB
+```
+
+#### Browser Compatibility
+
+- **Minimum Requirements**: Chrome 88+, Firefox 85+, Safari 14+
+- **Required Features**: IndexedDB, Web Workers, File API
+
+### Debug Mode
+
+Enable debug logging:
+
+```javascript
+// In browser console
+localStorage.setItem("debug", "vt-scanner:*");
+```
+
+## 📈 Roadmap
+
+### Planned Features
+
+- [ ] **Batch ZIP Processing**: Upload multiple ZIP files simultaneously
+- [ ] **Advanced Filtering**: More granular history filtering options
+- [ ] **Export Reports**: PDF/CSV export of scan results
+- [ ] **API Key Management**: Multiple API key support
+- [ ] **Scan Scheduling**: Automated periodic rescanning
+- [ ] **Integration APIs**: Webhook support for external systems
+
+### Performance Improvements
+
+- [ ] **Web Workers**: Move heavy processing to background threads
+- [ ] **Streaming**: Stream large file processing
+- [ ] **Caching**: Enhanced caching strategies
+- [ ] **Compression**: Optimize storage usage
+
+### Security Enhancements
+
+- [ ] **Advanced Heuristics**: Enhanced malware detection
+- [ ] **Sandboxing**: Isolated file processing
+- [ ] **Audit Logging**: Comprehensive security logging
+- [ ] **CSP Hardening**: Enhanced Content Security Policy
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by [N3vvb1e](https://github.com/N3vvb1e)**
+**Built with ❤️ by [N3vvb1e](https://github.com/N3vvb1e)**
 
-⭐ **Star this repository if you found it helpful!** ⭐
+_Keeping your files safe, one scan at a time_
 
 </div>
