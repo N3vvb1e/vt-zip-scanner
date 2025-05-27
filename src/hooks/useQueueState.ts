@@ -16,6 +16,7 @@ export interface QueueStateHook {
   updateTask: (id: string, updates: Partial<ScanTask>) => void;
   clearQueue: () => void;
   clearCompletedTasks: () => void;
+  loadSavedTasks: (savedTasks: ScanTask[]) => void;
   progress: {
     total: number;
     completed: number;
@@ -123,6 +124,12 @@ export function useQueueState(): QueueStateHook {
     hasUnsavedChanges.current = true;
   }, []);
 
+  // Load saved tasks from persistence
+  const loadSavedTasks = useCallback((savedTasks: ScanTask[]) => {
+    setTasks(savedTasks);
+    hasUnsavedChanges.current = false; // These are already saved
+  }, []);
+
   return {
     tasks,
     addTask,
@@ -132,6 +139,7 @@ export function useQueueState(): QueueStateHook {
     updateTask,
     clearQueue,
     clearCompletedTasks,
+    loadSavedTasks,
     progress,
     hasUnsavedChanges: () => hasUnsavedChanges.current,
     markSaved: () => {

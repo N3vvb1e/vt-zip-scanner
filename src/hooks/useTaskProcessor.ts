@@ -6,10 +6,9 @@
 import { useCallback } from "react";
 import type { ScanTask, TaskStatus } from "../types/index";
 import { submitFile } from "../services/virusTotalService";
-import { persistenceOrchestrator } from "../services/persistenceOrchestrator";
-import type { HistoryEntry } from "../services/repositories/historyRepository";
-import { calculateFileHashes } from "../utils/common";
 import { RATE_LIMIT_CONFIG, PROCESSING_CONFIG } from "../config/queueConfig";
+import { useDuplicateDetection } from "./useDuplicateDetection";
+import type { HistoryEntry } from "../services/repositories/historyRepository";
 
 export interface TaskProcessorHook {
   processTask: (task: ScanTask) => Promise<void>;
@@ -24,6 +23,8 @@ export function useTaskProcessor(
   getCurrentlyProcessing: () => Set<string>,
   getScanStartTimes: () => Map<string, number>
 ): TaskProcessorHook {
+  // Initialize duplicate detection hook
+  const duplicateDetection = useDuplicateDetection(updateTask);
   // Handle duplicate task (reuse existing scan)
   const handleDuplicateTask = useCallback(
     async (
@@ -31,14 +32,7 @@ export function useTaskProcessor(
       existingScan: HistoryEntry,
       fileHashes: { sha256: string; size: number }
     ) => {
-      console.log(
-        `✅ DUPLICATE DETECTED: Found existing scan for "${
-          task.file.name
-        }" (SHA256: ${fileHashes.sha256.substring(
-          0,
-          16
-        )}...), reusing result and saving API quota!`
-      );
+      // Reusing existing scan result to save API quota
 
       // Reuse existing scan result
       const reusedTask: ScanTask = {
@@ -68,9 +62,7 @@ export function useTaskProcessor(
             },
           },
         };
-        console.log(
-          `🔧 Enhanced reused report with local file hash for ${task.file.name}`
-        );
+        // Enhanced report with local file hash for duplicate detection
       }
 
       updateTask(task.id, {
@@ -96,15 +88,9 @@ export function useTaskProcessor(
         progress: 10,
       });
 
-      console.log(
-        `📤 Submitting file: ${task.file.name} (${task.file.size} bytes)`
-      );
-
-      // Only record request for actual API calls (not duplicates)
+      // Submit file to VirusTotal API
       recordRequest();
       const analysisId = await submitFile(task.file.blob!);
-
-      console.log(`File submitted successfully, analysis ID: ${analysisId}`);
 
       // Update file entry with hash
       task.file.sha256 = fileHashes.sha256;
@@ -159,7 +145,7 @@ export function useTaskProcessor(
         return;
       }
 
-      console.error(`Error processing task ${task.id}:`, error);
+      // Log error for debugging
 
       // Mark as error and add to history
       const errorTask: ScanTask = {
@@ -187,36 +173,22 @@ export function useTaskProcessor(
   const processTask = useCallback(
     async (task: ScanTask) => {
       try {
-        console.log(`🔄 Processing task ${task.id} (${task.file.name})`);
+        // Check for duplicate using the new hook
+        const { isDuplicate, existingScan, fileHashes } =
+          await duplicateDetection.checkForDuplicate(task);
 
-        // Step 1: Calculate file hash for duplicate detection
-        updateTask(task.id, {
-          status: "hashing" as TaskStatus,
-          progress: 5,
-        });
-
-        console.log(`Calculating hash for: ${task.file.name}`);
-        const fileHashes = await calculateFileHashes(task.file.blob!);
-
-        // Step 2: Check for existing scan
-        console.log(`Checking for existing scan of: ${task.file.name}`);
-        const existingScan = await persistenceOrchestrator.findExistingScan(
-          fileHashes.sha256,
-          fileHashes.size
-        );
-
-        if (existingScan) {
+        if (isDuplicate && existingScan) {
           await handleDuplicateTask(task, existingScan, fileHashes);
           return;
         }
 
-        // Step 3: No existing scan found, proceed with new scan
+        // No existing scan found, submit new scan
         await submitNewTask(task, fileHashes);
       } catch (error) {
         await handleTaskError(task, error);
       }
     },
-    [updateTask, handleDuplicateTask, submitNewTask, handleTaskError]
+    [duplicateDetection, handleDuplicateTask, submitNewTask, handleTaskError]
   );
 
   return {

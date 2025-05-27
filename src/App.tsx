@@ -81,10 +81,22 @@ function App() {
   useEffect(() => {
     const checkApiKey = async () => {
       try {
-        const isValid = await validateApiKey();
+        // Create timeout promise to prevent hanging
+        const timeoutPromise = new Promise<boolean>((_, reject) => {
+          setTimeout(
+            () => reject(new Error("API key validation timeout")),
+            3000
+          );
+        });
+
+        // Race between validation and timeout
+        const validationPromise = validateApiKey();
+        const isValid = await Promise.race([validationPromise, timeoutPromise]);
+
         setApiKeyValid(isValid);
       } catch (error) {
-        console.error("Error validating API key:", error);
+        console.warn("API key validation failed or timed out:", error);
+        // Set to false so user sees the API key error screen
         setApiKeyValid(false);
       }
     };

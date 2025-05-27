@@ -30,38 +30,29 @@ export function useQueuePersistence(
   // Initialize persistence service and load saved data
   const initializePersistence = async () => {
     try {
-      logger.debug("Initializing persistence service");
       await persistenceOrchestrator.init();
-      logger.success("Persistence service initialized");
 
-      logger.debug("Cleaning up invalid history entries");
       const cleanedCount =
         await persistenceOrchestrator.cleanupInvalidHistoryEntries();
       if (cleanedCount > 0) {
         logger.success("History cleanup completed", { cleanedCount });
       }
 
-      logger.debug("Loading settings");
       const settings = await persistenceOrchestrator.getSettings();
-      logger.success("Settings loaded", settings);
-
-      logger.debug("Loading saved queue");
       const savedTasks = await persistenceOrchestrator.loadQueue();
+
       if (savedTasks.length > 0) {
         logger.info("Tasks loaded from storage", {
           taskCount: savedTasks.length,
         });
       }
 
-      logger.debug("Setting initialized flag");
       isInitialized.current = true;
 
-      const result = {
+      return {
         savedTasks,
         autoStartEnabled: settings.autoStartScanning,
       };
-      logger.success("Queue persistence initialization completed");
-      return result;
     } catch (error) {
       logger.error("Queue persistence initialization failed", error);
       isInitialized.current = true;

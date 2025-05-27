@@ -42,7 +42,7 @@ export function usePersistedQueue() {
     isInitialized
   );
 
-  // Initialize persistence with processing state
+  // Initialize persistence with processing state (for auto-save functionality)
   useQueuePersistence(
     queueState.tasks,
     queueState.hasUnsavedChanges,
@@ -84,59 +84,45 @@ export function usePersistedQueue() {
     previousTaskIdsRef.current = currentTaskIds;
   }, [queueState.tasks, processing]);
 
-  // Initialize persistence and handle auto-start logic (run only once)
+  // Initialize persistence (run only once)
   useEffect(() => {
-    if (initializationRef.current) return; // Already initialized
+    if (initializationRef.current) return;
     initializationRef.current = true;
 
-    let isMounted = true;
-
     const initializePersistence = async () => {
-      logger.debug("Starting direct initialization test");
-
-      // Set a shorter timeout for testing
-      setTimeout(() => {
-        logger.warn(
-          "Initialization timeout reached, setting initialized anyway"
-        );
-        if (isMounted) {
-          setIsInitialized(true);
-        }
-      }, 2000);
-
       try {
-        // Test direct persistence service call
-        logger.debug("Testing direct persistence service");
+        // Direct initialization with persistence orchestrator
         const { persistenceOrchestrator } = await import(
           "../services/persistenceOrchestrator"
         );
 
-        logger.debug("Calling persistenceOrchestrator.init()");
         await persistenceOrchestrator.init();
-        logger.success("Direct persistence service init completed");
+        const settings_data = await persistenceOrchestrator.getSettings();
+        const savedTasks = await persistenceOrchestrator.loadQueue();
 
-        logger.debug("Loading settings from persistence");
-        const settings = await persistenceOrchestrator.getSettings();
-        logger.success("Direct settings loaded", settings);
-
-        logger.debug("Setting isInitialized to true");
-        setIsInitialized(true);
-        logger.success("Direct initialization completed successfully");
-      } catch (error) {
-        logger.error("Direct initialization failed", error);
-        if (isMounted) {
-          logger.warn("Setting isInitialized to true despite error");
-          setIsInitialized(true);
+        // Load saved tasks into queue state
+        if (savedTasks.length > 0) {
+          queueState.loadSavedTasks(savedTasks);
+          logger.info("Loaded saved tasks", { count: savedTasks.length });
         }
+
+        // Update settings with auto-start preference
+        settings.updateSettings({
+          autoStartScanning: settings_data.autoStartScanning,
+        });
+
+        setIsInitialized(true);
+        logger.success("Persistence initialization completed successfully");
+      } catch (error) {
+        logger.error("Persistence initialization failed", error);
+        // Set initialized anyway so app doesn't hang
+        setIsInitialized(true);
       }
     };
 
     initializePersistence();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []); // Empty dependency array - run only once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Return the orchestrated API from all hooks
   return {
