@@ -9,7 +9,7 @@
 
 **A comprehensive, secure, and modern web application for scanning ZIP files with VirusTotal API integration**
 
-[🚀 Live Demo](#) • [📖 Documentation](#documentation) • [🐛 Report Bug](https://github.com/N3vvb1e/vt-zip-scanner/issues) • [✨ Request Feature](https://github.com/N3vvb1e/vt-zip-scanner/issues)
+[🐛 Report Bug](https://github.com/N3vvb1e/vt-zip-scanner/issues) • [✨ Request Feature](https://github.com/N3vvb1e/vt-zip-scanner/issues)
 
 </div>
 
@@ -23,10 +23,6 @@
 - [⚙️ Configuration](#️-configuration)
 - [📁 Project Structure](#-project-structure)
 - [🔧 Development](#-development)
-- [🧪 Testing](#-testing)
-- [📦 Deployment](#-deployment)
-- [🤝 Contributing](#-contributing)
-- [📄 License](#-license)
 
 ---
 
@@ -511,15 +507,10 @@ graph LR
 ```bash
 # Development
 npm run dev          # Start development server with hot reload
-npm run build        # Build for production
-npm run preview      # Preview production build locally
 
 # Code Quality
 npm run lint         # Run ESLint for code quality checks
 npm run type-check   # Run TypeScript compiler checks
-
-# Utilities
-npm run clean        # Clean build artifacts
 ```
 
 ### 🏗️ **Development Workflow**
@@ -541,12 +532,6 @@ npm run clean        # Clean build artifacts
    npm run type-check  # Verify TypeScript types
    ```
 
-3. **Build for Production**
-   ```bash
-   npm run build       # Creates optimized production build
-   npm run preview     # Test production build locally
-   ```
-
 ### 🎨 **Styling Guidelines**
 
 - **Tailwind CSS**: Utility-first CSS framework for rapid UI development
@@ -560,192 +545,6 @@ npm run clean        # Clean build artifacts
 - **TypeScript**: Strict type checking enabled
 - **Prettier**: Code formatting (configure in your editor)
 - **React Best Practices**: Hooks, functional components, and performance optimization
-
----
-
-## 🧪 Testing
-
-### 🧪 **Testing Strategy**
-
-The application follows a comprehensive testing approach:
-
-- **Unit Tests**: Individual component and utility function testing
-- **Integration Tests**: Service layer and API integration testing
-- **E2E Tests**: Full user workflow testing
-- **Security Tests**: ZIP file security and validation testing
-
-### 🔧 **Running Tests**
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run E2E tests
-npm run test:e2e
-```
-
-### 📊 **Test Coverage**
-
-The project maintains high test coverage across:
-
-- ✅ **Components**: UI component behavior and rendering
-- ✅ **Hooks**: Custom hook logic and state management
-- ✅ **Services**: Business logic and API interactions
-- ✅ **Utilities**: Helper functions and security validations
-
----
-
-## 📦 Deployment
-
-### 🌐 **Production Build**
-
-1. **Build the application**
-
-   ```bash
-   npm run build
-   ```
-
-2. **Test the build locally**
-
-   ```bash
-   npm run preview
-   ```
-
-3. **Deploy to your hosting platform**
-   - The `dist/` folder contains all production files
-   - Configure your web server to serve `index.html` for all routes
-
-### ☁️ **Deployment Platforms**
-
-#### **Vercel** (Recommended)
-
-```bash
-npm install -g vercel
-vercel --prod
-```
-
-#### **Netlify**
-
-```bash
-npm install -g netlify-cli
-netlify deploy --prod --dir=dist
-```
-
-#### **GitHub Pages**
-
-```bash
-npm run build
-# Push dist/ folder to gh-pages branch
-```
-
-### 🔧 **Environment Configuration**
-
-For production deployment, ensure you have:
-
-1. **Environment Variables**: Set `VITE_VT_API_KEY` in your hosting platform
-2. **HTTPS**: Required for secure API communication
-3. **CSP Headers**: Configure Content Security Policy for enhanced security
-4. **Caching**: Set appropriate cache headers for static assets
-
----
-
-## 🤝 Contributing
-
-We welcome contributions from the community! Here's how you can help:
-
-### 🚀 **Getting Started**
-
-1. **Fork the repository**
-
-   ```bash
-   git clone https://github.com/your-username/vt-zip-scanner.git
-   cd vt-zip-scanner
-   ```
-
-2. **Create a feature branch**
-
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-
-3. **Make your changes**
-
-   - Follow the existing code style
-   - Add tests for new functionality
-   - Update documentation as needed
-
-4. **Test your changes**
-
-   ```bash
-   npm run lint
-   npm run type-check
-   npm test
-   ```
-
-5. **Commit your changes**
-
-   ```bash
-   git commit -m "feat: add amazing feature"
-   ```
-
-6. **Push to your fork**
-
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-
-7. **Create a Pull Request**
-   - Provide a clear description of your changes
-   - Include screenshots for UI changes
-   - Reference any related issues
-
-### 📝 **Contribution Guidelines**
-
-- **Code Style**: Follow the existing TypeScript and React patterns
-- **Commit Messages**: Use conventional commit format (`feat:`, `fix:`, `docs:`, etc.)
-- **Testing**: Add tests for new features and bug fixes
-- **Documentation**: Update README and code comments as needed
-- **Security**: Follow security best practices, especially for file handling
-
-### 🐛 **Reporting Issues**
-
-When reporting issues, please include:
-
-- **Environment**: OS, browser, Node.js version
-- **Steps to Reproduce**: Clear steps to reproduce the issue
-- **Expected Behavior**: What you expected to happen
-- **Actual Behavior**: What actually happened
-- **Screenshots**: If applicable, add screenshots
-
-### 💡 **Feature Requests**
-
-We're always looking for ways to improve! When suggesting features:
-
-- **Use Case**: Describe the problem you're trying to solve
-- **Proposed Solution**: Your idea for solving it
-- **Alternatives**: Any alternative solutions you've considered
-- **Additional Context**: Any other relevant information
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-### 📋 **License Summary**
-
-- ✅ **Commercial Use**: You can use this project commercially
-- ✅ **Modification**: You can modify the source code
-- ✅ **Distribution**: You can distribute the original or modified code
-- ✅ **Private Use**: You can use this project privately
-- ❌ **Liability**: The authors are not liable for any damages
-- ❌ **Warranty**: This project comes with no warranty
 
 ---
 
@@ -766,7 +565,6 @@ If you need help or have questions:
 - 📖 **Documentation**: Check this README and inline code comments
 - 🐛 **Issues**: [Create an issue](https://github.com/N3vvb1e/vt-zip-scanner/issues) on GitHub
 - 💬 **Discussions**: [Join the discussion](https://github.com/N3vvb1e/vt-zip-scanner/discussions)
-- 📧 **Email**: Contact the maintainer at [andy.sim78@yahoo.com](mailto:andy.sim78@yahoo.com)
 
 ---
 
