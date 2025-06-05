@@ -200,11 +200,12 @@ export class HistoryRepository
         }
       }
 
-      // Date range
-      if (options.dateFrom && new Date(entry.createdAt) < options.dateFrom) {
+      // Date range - use the same date logic as display (completedAt || createdAt)
+      const displayDate = entry.completedAt || entry.createdAt;
+      if (options.dateFrom && new Date(displayDate) < options.dateFrom) {
         return false;
       }
-      if (options.dateTo && new Date(entry.createdAt) > options.dateTo) {
+      if (options.dateTo && new Date(displayDate) > options.dateTo) {
         return false;
       }
 

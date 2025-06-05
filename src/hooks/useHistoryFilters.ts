@@ -12,7 +12,7 @@ import type {
 export interface HistoryFilters {
   query: string;
   status: "all" | "completed" | "error";
-  dateRange: "all" | "today" | "week" | "month";
+  dateRange: "all" | "today" | "last7days" | "last30days";
   hasThreats: "all" | "safe" | "threats";
 }
 
@@ -67,15 +67,29 @@ export function useHistoryFilters(): HistoryFiltersHook {
       if (filters.dateRange !== "all") {
         const now = new Date();
         switch (filters.dateRange) {
-          case "today":
-            searchOptions.dateFrom = new Date(now.setHours(0, 0, 0, 0));
+          case "today": {
+            // Start of today (00:00:00)
+            const startOfToday = new Date(now);
+            startOfToday.setHours(0, 0, 0, 0);
+            searchOptions.dateFrom = startOfToday;
             break;
-          case "week":
-            searchOptions.dateFrom = new Date(now.setDate(now.getDate() - 7));
+          }
+          case "last7days": {
+            // 7 days ago from start of today
+            const sevenDaysAgo = new Date(now);
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            sevenDaysAgo.setHours(0, 0, 0, 0);
+            searchOptions.dateFrom = sevenDaysAgo;
             break;
-          case "month":
-            searchOptions.dateFrom = new Date(now.setMonth(now.getMonth() - 1));
+          }
+          case "last30days": {
+            // 30 days ago from start of today
+            const thirtyDaysAgo = new Date(now);
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            thirtyDaysAgo.setHours(0, 0, 0, 0);
+            searchOptions.dateFrom = thirtyDaysAgo;
             break;
+          }
         }
       }
 

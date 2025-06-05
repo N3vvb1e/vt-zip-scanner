@@ -9,7 +9,10 @@ import type { HistoryFilters } from "../../../hooks/useHistoryFilters";
 
 interface HistoryFiltersProps {
   filters: HistoryFilters;
-  updateFilter: <K extends keyof HistoryFilters>(key: K, value: HistoryFilters[K]) => void;
+  updateFilter: <K extends keyof HistoryFilters>(
+    key: K,
+    value: HistoryFilters[K]
+  ) => void;
   showFilters: boolean;
   setShowFilters: (show: boolean) => void;
   totalEntries: number;
@@ -24,10 +27,10 @@ export function HistoryFilters({
   totalEntries,
   filteredCount,
 }: HistoryFiltersProps) {
-  const hasActiveFilters = 
-    filters.query || 
-    filters.status !== "all" || 
-    filters.dateRange !== "all" || 
+  const hasActiveFilters =
+    filters.query ||
+    filters.status !== "all" ||
+    filters.dateRange !== "all" ||
     filters.hasThreats !== "all";
 
   const clearAllFilters = () => {
@@ -78,7 +81,12 @@ export function HistoryFilters({
               </label>
               <select
                 value={filters.status}
-                onChange={(e) => updateFilter("status", e.target.value as HistoryFilters["status"])}
+                onChange={(e) =>
+                  updateFilter(
+                    "status",
+                    e.target.value as HistoryFilters["status"]
+                  )
+                }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Status</option>
@@ -94,13 +102,18 @@ export function HistoryFilters({
               </label>
               <select
                 value={filters.dateRange}
-                onChange={(e) => updateFilter("dateRange", e.target.value as HistoryFilters["dateRange"])}
+                onChange={(e) =>
+                  updateFilter(
+                    "dateRange",
+                    e.target.value as HistoryFilters["dateRange"]
+                  )
+                }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
+                <option value="last7days">Last 7 days</option>
+                <option value="last30days">Last 30 days</option>
               </select>
             </div>
 
@@ -111,7 +124,12 @@ export function HistoryFilters({
               </label>
               <select
                 value={filters.hasThreats}
-                onChange={(e) => updateFilter("hasThreats", e.target.value as HistoryFilters["hasThreats"])}
+                onChange={(e) =>
+                  updateFilter(
+                    "hasThreats",
+                    e.target.value as HistoryFilters["hasThreats"]
+                  )
+                }
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Files</option>
