@@ -17,7 +17,10 @@ export const DB_CONFIG = {
 export interface DatabaseManagerInterface {
   init(): Promise<void>;
   getDatabase(): Promise<IDBDatabase>;
-  transaction(storeNames: string[], mode?: IDBTransactionMode): Promise<IDBTransaction>;
+  transaction(
+    storeNames: string[],
+    mode?: IDBTransactionMode
+  ): Promise<IDBTransaction>;
   close(): void;
 }
 
@@ -102,7 +105,10 @@ export class DatabaseManager implements DatabaseManagerInterface {
   /**
    * Create object stores during database upgrade
    */
-  private createObjectStores(db: IDBDatabase, event: IDBVersionChangeEvent): void {
+  private createObjectStores(
+    db: IDBDatabase,
+    event: IDBVersionChangeEvent
+  ): void {
     // Create queue store
     if (!db.objectStoreNames.contains(DB_CONFIG.STORES.QUEUE)) {
       const queueStore = db.createObjectStore(DB_CONFIG.STORES.QUEUE, {
